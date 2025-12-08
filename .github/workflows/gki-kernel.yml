@@ -128,20 +128,31 @@ jobs:
           echo "Cloning AnyKernel3 and other dependencies..."
 
           ANYKERNEL_BRANCH="gki-2.0"
-          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
-
           # Debug print the branches
-          echo "Using branch for SUSFS: $SUSFS_BRANCH"
-
           # Clone repositories using the branch names
-          git clone https://github.com/Xennet7/AnyKernel3.git -b "$ANYKERNEL_BRANCH"
-          git clone https://gitlab.com/simonpunk/susfs4ksu.git -b "$SUSFS_BRANCH"
+          git clone https://github.com/Xennet7/AnyKernel3.git -b "$ANYKERNEL_BRANCH"    
           git clone https://github.com/WildPlusKernel/kernel_patches.git
           # Sukisu's patch repository
           git clone https://github.com/ShirkNeko/SukiSU_patch.git
           # Next fix patch
           git clone https://github.com/zzh20188/GKI_KernelSU_SUSFS.git zzh_patch
           
+      - name: Fetch and Incorporating SUSFS
+        run: |
+          SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
+          SUSFS_COMMIT="${{ inputs.susfs_commit }}"
+          SUSFS_REPO="https://gitlab.com/simonpunk/susfs4ksu.git"
+          # branch-first clone (keeps existing behavior)
+          git clone "$SUSFS_REPO" -b "$SUSFS_BRANCH"
+          cd susfs4ksu
+          # if user provided a commit, override with exact commit
+          if [ -n "$SUSFS_COMMIT" ]; then
+          echo "Checking out SUSFS commit: $SUSFS_COMMIT"
+          git checkout "$SUSFS_COMMIT"
+          else
+          echo "Using latest SUSFS branch: $SUSFS_BRANCH"
+          fi
+          cd..    
   
       - name: Initialize and Sync Kernel Source
         run: |
