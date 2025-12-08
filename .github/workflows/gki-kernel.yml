@@ -28,10 +28,13 @@ on:
       kernelsu_branch:
         required: true
         type: string
-      # kernelsu_branch_other:
-      #   required: false
-      #   type: string
       revision:
+        required: false
+        type: string
+      kernelsu_commit:
+        required: false
+        type: string
+      susfs_commit:
         required: false
         type: string
       version:
