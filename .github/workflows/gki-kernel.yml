@@ -286,50 +286,45 @@ jobs:
 
           if [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
             echo "Adding KernelSU Official..."
-
             if [ -n "$KERNELSU_COMMIT" ]; then
-              echo "Using exact KernelSU commit: $KERNELSU_COMMIT"
-              curl -fsSL "https://raw.githubusercontent.com/tiann/KernelSU/${KERNELSU_COMMIT}/kernel/setup.sh" | bash $BRANCH
+              echo "Using KernelSU commit: $KERNELSU_COMMIT"
+              curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s "$KERNELSU_COMMIT"
             else
-             echo "Using branch-based KernelSU (main)"
-              curl -fsSL "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash $BRANCH
+              echo "Using KernelSU latest/tag (fallback)"
+              curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash
             fi
 
           elif [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
             echo "Adding KernelSU Next..."
-
             if [ -n "$KERNELSU_COMMIT" ]; then
-              echo "Using exact KernelNext commit: $KERNELSU_COMMIT"
-              curl -fsSL "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/${KERNELSU_COMMIT}/kernel/setup.sh" | bash $BRANCH
+              echo "Using KernelSU commit: $KERNELSU_COMMIT"
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s "$KERNELSU_COMMIT"
             else
-              curl -fsSL "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash $BRANCH
+              curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash
             fi
 
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             echo "Adding KernelSU MKSU..."
-
             if [ -n "$KERNELSU_COMMIT" ]; then
-              echo "Using exact MKSU commit: $KERNELSU_COMMIT"
-              curl -fsSL "https://raw.githubusercontent.com/5ec1cff/KernelSU/${KERNELSU_COMMIT}/kernel/setup.sh" | bash $BRANCH
+              echo "Using KernelSU commit: $KERNELSU_COMMIT"
+              curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash -s "$KERNELSU_COMMIT"
             else
-              curl -fsSL "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash $BRANCH
+              curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash
             fi
 
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             echo "Adding KernelSU SukiSU..."
-
             if [ -n "$KERNELSU_COMMIT" ]; then
-              echo "Using exact SukiSU commit: $KERNELSU_COMMIT"
-              curl -fsSL "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/${KERNELSU_COMMIT}/kernel/setup.sh" | bash $BRANCH
+              echo "Using KernelSU commit: $KERNELSU_COMMIT"
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$KERNELSU_COMMIT"
             else
-              curl -fsSL "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
+             curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash
             fi
 
           else
             echo "Unknown kernelsu_variant: ${{ inputs.kernelsu_variant }}"
             exit 1
           fi
-
 
       - name: Get KSU Versions
         run: |
