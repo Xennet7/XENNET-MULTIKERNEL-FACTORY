@@ -27,6 +27,14 @@ on:
           - Dev
           - Other
         default: Stable
+      kernelsu_commit:
+        description: "Optional KernelSU commit SHA"
+        required: false
+        type: string
+      susfs_commit:
+        description: "Optional SUSFS commit SHA"
+        required: false
+        type: string
       version:
         description: 'Custom version name (e.g. 6.6.77-android15-8<custom version name>/leave blank to use the default version number)'
         required: false
@@ -75,6 +83,8 @@ jobs:
       make_release: false
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
+      susfs_commit: ${{ inputs.susfs_commit }}
+      kernelsu_commit: ${{ inputs.kernelsu_commit }}
       version: ${{ inputs.version }}
       use_zram: ${{ inputs.use_zram }}
       use_bbg: ${{ inputs.use_bbg }}
