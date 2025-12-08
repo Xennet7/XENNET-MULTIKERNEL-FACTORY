@@ -278,32 +278,42 @@ jobs:
         run: |
           echo "Change to the configuration directory: $CONFIG..."
           cd "$CONFIG"
+          KERNELSU_COMMIT="${{ inputs.kernelsu_commit }}"
+          fetch_and_run() {
+            local rawurl_branch="$1"
+            local rawurl_commit="$2"
+            if [ -n "$KERNELSU_COMMIT" ]; then
+              echo "Using KernelSU commit $KERNELSU_COMMIT"
+              curl -fsSL "$rawurl_commit" | bash $BRANCH
+            else
+              echo "Using KernelSU branch URL"
+              curl -fsSL "$rawurl_branch" | bash $BRANCH
+            fi
+          }
           if [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
             echo "Adding KernelSU Official..."
-            curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash $BRANCH
+            raw_branch_url="https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh"
+            raw_commit_url="https://raw.githubusercontent.com/tiann/KernelSU/${KERNELSU_COMMIT}/kernel/setup.sh"
+            fetch_and_run "$raw_branch_url" "$raw_commit_url"
           elif [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
             echo "Adding KernelSU Next..."
-            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash $BRANCH
+            raw_branch_url="https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh"
+            raw_commit_url="https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/${KERNELSU_COMMIT}/kernel/setup.sh"
+            fetch_and_run "$raw_branch_url" "$raw_commit_url"
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             echo "Adding KernelSU MKSU..."
-            curl -LSs "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash $BRANCH
+            raw_branch_url="https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh"
+            raw_commit_url="https://raw.githubusercontent.com/5ec1cff/KernelSU/${KERNELSU_COMMIT}/kernel/setup.sh"
+            fetch_and_run "$raw_branch_url" "$raw_commit_url"
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             echo "Adding KernelSU SukiSU..."
-            curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
+            raw_branch_url="https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh"
+            raw_commit_url="https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/${KERNELSU_COMMIT}/kernel/setup.sh"
+            fetch_and_run "$raw_branch_url" "$raw_commit_url"
+          else
+            echo "Unknown kernelsu_variant: ${ { inputs.kernelsu_variant } }"
+            exit 1
           fi
-
-      #- name: Getting SUKISU Version
-        #run: |
-          #git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git Verfold
-          #cd Verfold
-          #KSU_GIT_VERSION=$(git rev-list --count HEAD)
-          #KSU_VERSION=$((10700 + KSU_GIT_VERSION + VAR))
-          #KSU_VERSION=$((37185 + KSU_GIT_VERSION + VAR))
-          #echo $KSU_VERSION
-          #echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          #echo "Deleting the directory"
-          #cd ..
-          #rm -rf Verfold 
 
       - name: Get KSU Versions
         run: |
