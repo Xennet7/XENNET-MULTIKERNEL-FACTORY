@@ -18,6 +18,14 @@ on:
         required: true
         type: string
         default: Stable
+      kernelsu_commit:
+        required: false
+        type: string
+        default: ""
+      susfs_commit:
+        required: false
+        type: string
+        default: ""
       version:
         required: false
         type: string
@@ -102,6 +110,8 @@ jobs:
       os_patch_level: ${{ matrix.os_patch_level }}
       kernelsu_variant: ${{ inputs.kernelsu_variant || 'Next' }}
       kernelsu_branch: ${{ inputs.kernelsu_branch || 'Dev' }}
+      susfs_commit: ${{ inputs.susfs_commit || '' }}
+      kernelsu_commit: ${{ inputs.kernelsu_commit || '' }}
       version: ${{ inputs.version || '' }}
       use_zram: ${{ inputs.use_zram }}
       use_bbg: ${{ inputs.use_bbg }}
