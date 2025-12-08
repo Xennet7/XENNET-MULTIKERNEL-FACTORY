@@ -190,7 +190,16 @@ jobs:
               fi
             fi
           fi
-
+          
+      - name: Clean Up ABI Protected Exports
+        shell: bash
+        run: |
+          cd "$CONFIG"
+          rm -f common/android/abi_gki_protected_exports_* || true
+          rm -f msm-kernel/android/abi_gki_protected_exports_* || true
+          sed -i 's/protected_modules = \[.*\]/protected_modules = []/' common/modules.bzl
+          df -h
+          
       - name: Fix Less Then 6.6.50 Builds
         if: inputs.android_version == 'android15' && inputs.kernel_version == '6.6' && inputs.sub_level < 50
         run: |
