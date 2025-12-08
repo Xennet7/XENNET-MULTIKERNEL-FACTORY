@@ -281,42 +281,55 @@ jobs:
         run: |
           echo "Change to the configuration directory: $CONFIG..."
           cd "$CONFIG"
+
           KERNELSU_COMMIT="${{ inputs.kernelsu_commit }}"
-          fetch_and_run() {
-            local rawurl_branch="$1"
-            local rawurl_commit="$2"
-            if [ -n "$KERNELSU_COMMIT" ]; then
-              echo "Using KernelSU commit $KERNELSU_COMMIT"
-              curl -fsSL "$rawurl_commit" | bash $BRANCH
-            else
-              echo "Using KernelSU branch URL"
-              curl -fsSL "$rawurl_branch" | bash $BRANCH
-            fi
-          }
+
           if [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
             echo "Adding KernelSU Official..."
-            raw_branch_url="https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh"
-            raw_commit_url="https://raw.githubusercontent.com/tiann/KernelSU/${KERNELSU_COMMIT}/kernel/setup.sh"
-            fetch_and_run "$raw_branch_url" "$raw_commit_url"
+
+            if [ -n "$KERNELSU_COMMIT" ]; then
+              echo "Using exact KernelSU commit: $KERNELSU_COMMIT"
+              curl -fsSL "https://raw.githubusercontent.com/tiann/KernelSU/${KERNELSU_COMMIT}/kernel/setup.sh" | bash $BRANCH
+            else
+             echo "Using branch-based KernelSU (main)"
+              curl -fsSL "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash $BRANCH
+            fi
+
           elif [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
             echo "Adding KernelSU Next..."
-            raw_branch_url="https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh"
-            raw_commit_url="https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/${KERNELSU_COMMIT}/kernel/setup.sh"
-            fetch_and_run "$raw_branch_url" "$raw_commit_url"
+
+            if [ -n "$KERNELSU_COMMIT" ]; then
+              echo "Using exact KernelNext commit: $KERNELSU_COMMIT"
+              curl -fsSL "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/${KERNELSU_COMMIT}/kernel/setup.sh" | bash $BRANCH
+            else
+              curl -fsSL "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash $BRANCH
+            fi
+
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             echo "Adding KernelSU MKSU..."
-            raw_branch_url="https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh"
-            raw_commit_url="https://raw.githubusercontent.com/5ec1cff/KernelSU/${KERNELSU_COMMIT}/kernel/setup.sh"
-            fetch_and_run "$raw_branch_url" "$raw_commit_url"
+
+            if [ -n "$KERNELSU_COMMIT" ]; then
+              echo "Using exact MKSU commit: $KERNELSU_COMMIT"
+              curl -fsSL "https://raw.githubusercontent.com/5ec1cff/KernelSU/${KERNELSU_COMMIT}/kernel/setup.sh" | bash $BRANCH
+            else
+              curl -fsSL "https://raw.githubusercontent.com/5ec1cff/KernelSU/main/kernel/setup.sh" | bash $BRANCH
+            fi
+
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             echo "Adding KernelSU SukiSU..."
-            raw_branch_url="https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh"
-            raw_commit_url="https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/${KERNELSU_COMMIT}/kernel/setup.sh"
-            fetch_and_run "$raw_branch_url" "$raw_commit_url"
+
+            if [ -n "$KERNELSU_COMMIT" ]; then
+              echo "Using exact SukiSU commit: $KERNELSU_COMMIT"
+              curl -fsSL "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/${KERNELSU_COMMIT}/kernel/setup.sh" | bash $BRANCH
+            else
+              curl -fsSL "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
+            fi
+
           else
-            echo "Unknown kernelsu_variant: ${ { inputs.kernelsu_variant } }"
+            echo "Unknown kernelsu_variant: ${{ inputs.kernelsu_variant }}"
             exit 1
           fi
+
 
       - name: Get KSU Versions
         run: |
