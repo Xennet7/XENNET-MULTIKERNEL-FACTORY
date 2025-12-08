@@ -155,7 +155,7 @@ jobs:
           else
           echo "Using latest SUSFS branch: $SUSFS_BRANCH"
           fi
-          cd..    
+          cd ..    
   
       - name: Initialize and Sync Kernel Source
         run: |
