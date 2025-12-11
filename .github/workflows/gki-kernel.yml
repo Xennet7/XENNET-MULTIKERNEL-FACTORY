@@ -816,6 +816,53 @@ jobs:
             tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
           fi
 
+      - name: Extract Kernel Version & Build Time
+        run: |
+          set -euo pipefail
+          echo "Looking for Image at: $CONFIG/bazel-bin/common/kernel_aarch64/Image"
+          selected="$CONFIG/bazel-bin/common/kernel_aarch64/Image"
+
+          if [ ! -f "$selected" ]; then
+            echo "ERROR: Image not found at expected path: $selected"
+            # fallback: try to find any Image under $CONFIG
+            alt=$(find "$CONFIG" -type f -name 'Image' -print -quit || true)
+            if [ -n "$alt" ]; then
+              echo "Found fallback Image at: $alt"
+              selected="$alt"
+            else
+              exit 1
+            fi
+          fi
+
+          echo "Selected artifact: $selected"
+
+          # Extract complete Linux version line from Image
+          LINUX_LINE=$(strings "$selected" | grep -m1 "Linux version" || true)
+
+          if [ -z "$LINUX_LINE" ]; then
+            echo "ERROR: Could not find 'Linux version' inside Image!"
+            exit 1
+          fi
+
+          echo "Found Linux line: $LINUX_LINE"
+
+          # Kernel name is the 3rd token in "Linux version <name> ..."
+          KERNEL_NAME=$(echo "$LINUX_LINE" | awk '{print $3}')
+
+          # Build time: text after 'SMP PREEMPT ' (falls back to everything after 'SMP' or 'PREEMPT')
+          BUILD_TIME=$(echo "$LINUX_LINE" | sed -n 's/.*SMP PREEMPT[[:space:]]*//p; s/.*SMP[[:space:]]*//p; s/.*PREEMPT[[:space:]]*//p' | sed -n '1p' | tr -s ' ' ' ')
+
+          echo "----------------------------------------"
+          echo "Kernel artifact: $selected"
+          echo "Kernel Name    : $KERNEL_NAME"
+          echo "Build Time     : $BUILD_TIME"
+          echo "----------------------------------------"
+
+          # export for later steps
+          #echo "BUILT_KERNEL_ARTIFACT=$selected" >> $GITHUB_ENV
+          #echo "BUILT_KERNEL_NAME=$KERNEL_NAME" >> $GITHUB_ENV
+          #echo "BUILT_KERNEL_TIME=$BUILD_TIME" >> $GITHUB_ENV    
+
       - name: Patch Image file Android 12 and Android 13 with KPM (SukiSU only)
         if: ${{ inputs.use_kpm && inputs.kernelsu_variant == 'SukiSU' && (inputs.android_version == 'android12' || inputs.android_version == 'android13') }}
         run: |
