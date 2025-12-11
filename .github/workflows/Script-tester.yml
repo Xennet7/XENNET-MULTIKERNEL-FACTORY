@@ -73,18 +73,7 @@ on:
         default: false
 
 jobs:
-  build-kernel-a15-6-6:
-    uses: ./.github/workflows/build-kernel-a15-6-6.yml
-    secrets: inherit
-
-  get-ksu-manager:
-    uses: ./.github/workflows/get-ksu-manager.yml
-    secrets: inherit
-
   test-script-main:
-    needs:
-      - build-kernel-a15-6-6
-      - get-ksu-manager
     uses: ./.github/workflows/test-main.yml
     secrets: inherit
     with:
@@ -105,38 +94,23 @@ jobs:
     if: ${{ inputs.get_manager }}
     uses: ./.github/workflows/test-manager.yml
     secrets: inherit
-    needs:
-      - build-kernel-a15-6-6
-      - get-ksu-manager
 
   test-releasesuki:
     if: ${{ inputs.kernelsu_variant == 'SukiSU' }}
     uses: ./.github/workflows/testksu.yml
     secrets: inherit
-    needs:
-      - build-kernel-a15-6-6
-      - get-ksu-manager
-
   test-releaseksu:
     if: ${{ inputs.kernelsu_variant == 'Official' }}
     uses: ./.github/workflows/testksu.yml
     secrets: inherit
-    needs:
-      - build-kernel-a15-6-6
-      - get-ksu-manager
 
   test-releasemksu:
     if: ${{ inputs.kernelsu_variant == 'MKSU' }}
     uses: ./.github/workflows/testmksu.yml
     secrets: inherit
-    needs:
-      - build-kernel-a15-6-6
-      - get-ksu-manager
 
   test-releasenext:
     if: ${{ inputs.kernelsu_variant == 'Next' }}
     uses: ./.github/workflows/testnext.yml
     secrets: inherit
-    needs:
-      - build-kernel-a15-6-6
-      - get-ksu-manager
+  
