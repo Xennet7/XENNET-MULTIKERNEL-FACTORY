@@ -16,7 +16,6 @@ on:
       susVer:
         description: "The fetched SUSFS version number"
         value: ${{ jobs.get_ksu_manager.outputs.susVer }}
-
       ksuVer:
         description: "The calculated KSU version number"
         value: ${{ jobs.get_ksu_manager.outputs.ksuVer }}
@@ -65,7 +64,6 @@ jobs:
       - name: Get KSU & SUSFS versions
         id: get_version
         run: |
-
           set -euo pipefail
           KERNELSU_VARIANT="${{ inputs.kernelsu_variant }}"
           KERNELSU_COMMIT="${{ inputs.kernelsu_commit }}"   # may be empty
@@ -155,53 +153,195 @@ jobs:
             REPO="tiann/KernelSU"
             KSUM="manager"
           fi
-
-          FILENAME=$([[ "${{ inputs.kernelsu_variant }}" == "Next" ]] && echo "build-manager-ci.yml" || echo "build-manager.yml")
-          
+          FILENAME=$([[ "${{ inputs.kernelsu_variant }}" == "Next" ]] && echo "build-manager-ci.yml" || echo "build-manager.yml")          
           # Initialize
           NUMBER=0
           DOWNLOAD_URL=""
-
           echo "Start searching for builds containing the 'manager' artifact..."
-          while true; do
-            echo "--------------------------------------------------"
-            echo "Checking historical build #${NUMBER} (0 is latest)..."
-
-            if [ "$NUMBER" -ge 9 ]; then
-              echo "If the search fails nine times, the loop will be exited."
-              break
+          # Debug + variable setup
+          echo "DEBUG: Entering Manager selection block"
+          echo "DEBUG: inputs.kernelsu_variant = '${{ inputs.kernelsu_variant }}'"
+          echo "DEBUG: inputs.kernelsu_commit  = '${{ inputs.kernelsu_commit }}'"
+          echo "DEBUG: env.KSU_VERSION (if set) = '${{ env.KSU_VERSION }}'"
+          REPO="${REPO:-$REPO}"             # owner/repo
+          FILENAME="${FILENAME:-$FILENAME}" # workflow filename (e.g. build-manager.yml)
+          KSUM="${KSUM:-$KSUM}"             # artifact matching string (e.g. manager)
+          KERNELSU_COMMIT="${{ inputs.kernelsu_commit }}"
+          KSU_VERSION_FROM_ENV="${{ env.KSU_VERSION }}"
+          # normalized token for safe grep
+          if [ -n "$KSU_VERSION_FROM_ENV" ]; then
+            KSU_MATCH_TOKEN=$(echo "$KSU_VERSION_FROM_ENV" | sed 's/[^0-9A-Za-z._-]/./g')
+          else
+            KSU_MATCH_TOKEN=""
+          fi
+          PER_PAGE=50
+          MAX_PAGES=6          # adjust if you need to search deeper
+          FOUND_DOWNLOAD_URL=""
+          FOUND_BUILD_ID=""
+          FOUND_RUN_HEAD_SHA=""
+          MATCH_BY_KSUVER=false
+          if [ -z "$KERNELSU_COMMIT" ] && [ -n "$KSU_MATCH_TOKEN" ]; then
+            MATCH_BY_KSUVER=true
+            echo "DEBUG: No commit input; will try KSUVER content/filename matching: $KSU_MATCH_TOKEN"
+          fi
+          echo "Searching for Manager artifact (name contains '$KSUM') in workflow $FILENAME of repo $REPO"
+          echo "Requested commit: ${KERNELSU_COMMIT:-<none>}"
+          fetch_runs_page() {
+            page=$1
+            curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?status=success&per_page=$PER_PAGE&page=$page"
+          }
+          # 1) If commit provided: search for run with head_sha == commit and artifact present; verify zip filenames/contents optionally
+          if [ -n "$KERNELSU_COMMIT" ]; then
+            echo "Looking for runs whose head_sha matches requested commit..."
+            for page in $(seq 1 $MAX_PAGES); do
+              echo "Querying runs page $page..."
+              runs_json=$(fetch_runs_page "$page")
+              total=$(echo "$runs_json" | jq '.workflow_runs | length')
+              if [ "$total" -eq 0 ]; then
+                echo "No successful runs on page $page; stop."
+                break
+              fi
+              for idx in $(seq 0 $((total-1))); do
+                run=$(echo "$runs_json" | jq -c ".workflow_runs[$idx]")
+                run_id=$(echo "$run" | jq -r '.id')
+                head_sha=$(echo "$run" | jq -r '.head_sha')
+                echo "  Inspect run id=$run_id head_sha=$head_sha"
+                if [ "$head_sha" != "$KERNELSU_COMMIT" ]; then
+                  continue
+                fi
+                echo "  -> head_sha matches requested commit. Checking artifacts for run $run_id..."
+                artifacts=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$run_id/artifacts")
+                art_name=$(echo "$artifacts" | jq -r '.artifacts[]?.name' | grep -E "$KSUM" | head -n1 || true)
+                if [ -z "$art_name" ]; then
+                  echo "    -> Run $run_id matches commit but no artifact matching '$KSUM'"
+                  continue
+                fi
+                echo "    -> Candidate artifact '$art_name' found in run $run_id"
+                download_url=$(echo "$artifacts" | jq -r --arg name "$art_name" '.artifacts[] | select(.name == $name) | .archive_download_url')
+                tmpzip="$(mktemp -u /tmp/ksu_mgr.XXXXXX).zip"
+                echo "    -> Downloading artifact for inspection..."
+                curl -sL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o "$tmpzip" "$download_url" || { echo "    -> download failed"; rm -f "$tmpzip"; continue; }
+                FOUND_IN_ZIP=false
+                if [ -n "$KSU_MATCH_TOKEN" ]; then
+                  # 1) Check filenames inside the zip
+                  if unzip -l "$tmpzip" >/tmp/zip_list.txt 2>/dev/null; then
+                    if grep -q "$KSU_MATCH_TOKEN" /tmp/zip_list.txt; then
+                      echo "    -> Token '$KSU_MATCH_TOKEN' found in ZIP filenames"
+                      FOUND_IN_ZIP=true
+                    else
+                      echo "    -> Token '$KSU_MATCH_TOKEN' NOT found in ZIP filenames"
+                    fi
+                  else
+                    echo "    -> unzip -l failed to list ZIP"
+                  fi
+                  # 2) If not found in filenames, check file contents
+                  if [ "$FOUND_IN_ZIP" = false ]; then
+                    if unzip -p "$tmpzip" 2>/dev/null | strings | grep -q "$KSU_MATCH_TOKEN"; then
+                      echo "    -> Token '$KSU_MATCH_TOKEN' found in ZIP file contents"
+                      FOUND_IN_ZIP=true
+                    else
+                      echo "    -> Token '$KSU_MATCH_TOKEN' NOT found in ZIP contents"
+                    fi
+                  fi
+                else
+                  echo "    -> No KSU_MATCH_TOKEN available; will accept artifact based on commit match"
+                  FOUND_IN_ZIP=true
+                fi
+                rm -f /tmp/zip_list.txt
+                rm -f "$tmpzip"
+                if [ "$FOUND_IN_ZIP" = true ]; then
+                  echo "    -> Accepting this artifact (matched commit and/or KSU token)"
+                  FOUND_DOWNLOAD_URL="$download_url"
+                  FOUND_BUILD_ID="$run_id"
+                  FOUND_RUN_HEAD_SHA="$head_sha"
+                  break 2
+                else
+                  echo "    -> Rejecting this artifact (no match in filenames or contents)"
+                fi
+              done
+            done
+            if [ -z "$FOUND_DOWNLOAD_URL" ]; then
+              echo "No artifact found in runs matching the requested commit."
             fi
-
-            # 1. Get the IDs of the successful builds in the specified order
-
-            BUILD_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/$REPO/actions/workflows/$FILENAME/runs?status=success" |
-              jq -r '.workflow_runs['"$NUMBER"'].id')
-
-            echo "Find the build ID: $BUILD_ID"
-
-            ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/$REPO/actions/runs/$BUILD_ID/artifacts")
-
-            result=$(echo "$ARTIFACTS" | jq -r '.artifacts[] | select(.name | contains("'"$KSUM"'")) | .name')
-
-            if [ -z "$result" ]; then
-              echo "No entry found containing '$KSUM'"
-              NUMBER=$((NUMBER + 1))
-            else
-              echo "$result"
-              DOWNLOAD_URL=$(echo "$ARTIFACTS" | jq -r '.artifacts[] | select(.name == "'"$KSUM"'") | .archive_download_url')
-              break
-            fi
-
-          done
-         
-          # Download the Manager file
-          curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o "${{ inputs.kernelsu_variant }}-Manager(${{ env.KSU_VERSION }}).zip" "$DOWNLOAD_URL"
-          echo "Manager File downloaded as：${{ inputs.kernelsu_variant }}-Manager(${{ env.KSU_VERSION }}).zip"
-          unzip *.zip
-          rm -rf *.zip
-
+          fi
+          # 2) If not found or commit not provided: fallback — search recent runs for artifact; prefer KSUVER-match when requested
+          if [ -z "$FOUND_DOWNLOAD_URL" ]; then
+            echo "Fallback search for artifact by presence (will prefer matches containing KSUVER if available)..."
+            for page in $(seq 1 $MAX_PAGES); do
+              echo "Scanning runs page $page..."
+              runs_json=$(fetch_runs_page "$page")
+              total=$(echo "$runs_json" | jq '.workflow_runs | length')
+              if [ "$total" -eq 0 ]; then
+                break
+              fi
+              for idx in $(seq 0 $((total-1))); do
+                run=$(echo "$runs_json" | jq -c ".workflow_runs[$idx]")
+                run_id=$(echo "$run" | jq -r '.id')
+                head_sha=$(echo "$run" | jq -r '.head_sha')
+                echo "  Fallback inspect run id=$run_id head_sha=$head_sha"
+                artifacts=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$run_id/artifacts")
+                art_name=$(echo "$artifacts" | jq -r '.artifacts[]?.name' | grep -E "$KSUM" | head -n1 || true)
+                if [ -z "$art_name" ]; then
+                  continue
+                fi
+                download_url=$(echo "$artifacts" | jq -r --arg name "$art_name" '.artifacts[] | select(.name == $name) | .archive_download_url')
+                echo "    -> Found artifact '$art_name' in run $run_id"
+                if [ "$MATCH_BY_KSUVER" = true ]; then
+                  tmpzip="$(mktemp -u /tmp/ksu_mgr.XXXXXX).zip"
+                  curl -sL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -o "$tmpzip" "$download_url" || { rm -f "$tmpzip"; continue; }
+                  FOUND_IN_ZIP=false
+                  if unzip -l "$tmpzip" >/tmp/zip_list.txt 2>/dev/null; then
+                    if grep -q "$KSU_MATCH_TOKEN" /tmp/zip_list.txt; then
+                      echo "    -> Token '$KSU_MATCH_TOKEN' found in ZIP filenames (fallback)"
+                      FOUND_IN_ZIP=true
+                    else
+                      echo "    -> Token '$KSU_MATCH_TOKEN' NOT found in ZIP filenames (fallback)"
+                    fi
+                  fi
+                  if [ "$FOUND_IN_ZIP" = false ]; then
+                    if unzip -p "$tmpzip" 2>/dev/null | strings | grep -q "$KSU_MATCH_TOKEN"; then
+                      echo "    -> Token '$KSU_MATCH_TOKEN' found in ZIP contents (fallback)"
+                      FOUND_IN_ZIP=true
+                    else
+                      echo "    -> Token '$KSU_MATCH_TOKEN' NOT found in ZIP contents (fallback)"
+                    fi
+                  fi
+                  rm -f /tmp/zip_list.txt
+                  rm -f "$tmpzip"
+                  if [ "$FOUND_IN_ZIP" = true ]; then
+                    FOUND_DOWNLOAD_URL="$download_url"
+                    FOUND_BUILD_ID="$run_id"
+                    FOUND_RUN_HEAD_SHA="$head_sha"
+                    break 3
+                  else
+                    echo "    -> Candidate does not contain KSU token; skipping (fallback)"
+                    continue
+                  fi
+                else
+                  FOUND_DOWNLOAD_URL="$download_url"
+                  FOUND_BUILD_ID="$run_id"
+                  FOUND_RUN_HEAD_SHA="$head_sha"
+                  break 3
+                fi
+              done
+            done
+          fi
+          # 3) Finalize: download chosen artifact and unzip
+          if [ -n "$FOUND_DOWNLOAD_URL" ]; then
+            echo "Selected run $FOUND_BUILD_ID (head_sha=$FOUND_RUN_HEAD_SHA). Downloading artifact ..."
+            curl -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -o "${{ inputs.kernelsu_variant }}-Manager(${{ env.KSU_VERSION }}).zip" \
+              "$FOUND_DOWNLOAD_URL"
+            echo "Downloaded: ${{ inputs.kernelsu_variant }}-Manager(${{ env.KSU_VERSION }}).zip from run $FOUND_BUILD_ID"
+            unzip -o "*.zip" || echo "unzip failed"
+            rm -rf *.zip
+          else
+            echo "ERROR: Could not find Manager artifact matching criteria."
+          fi
+          
       - name: Adding the SUSFS module
         id: add_SUSFS
         continue-on-error: true
