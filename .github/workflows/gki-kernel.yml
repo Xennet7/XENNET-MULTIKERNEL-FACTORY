@@ -589,26 +589,6 @@ jobs:
           echo "Applying lz4k_oplus patch"
           patch -p1 -F 3 < lz4k_oplus.patch || true
           echo "Completed the lz4k_oplus patch"
-      
-      - name: Fixing Wi-Fi and Bluetooth functionality on Samsung 6.6 GKI devices
-        if: ${{ ( inputs.kernel_version == '6.6' ) }}
-        run: |
-          echo "[+] Added Samsung KDP exported symbols to abi_gki_aarch64_galaxy"
-          SYMBOL_LIST=$CONFIG/common/android/abi_gki_aarch64_galaxy
-          echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
-          echo "kdp_usecount_dec_and_test" >> $SYMBOL_LIST
-          echo "kdp_usecount_inc" >> $SYMBOL_LIST
-          echo "[+] Added Samsung KDP exported symbol definitions to abi_gki_aarch64.stg"
-          cd $CONFIG/common
-          PATCH="../../kernel_patches/samsung/min_kdp/add-min_kdp-symbols.patch"
-          if patch -p1 --dry-run < $PATCH; then
-            echo "[+] Successfully added Samsung KDP export symbol definitions to abi_gki_aarch64.stg"
-            patch -p1 --no-backup-if-mismatch < $PATCH
-          fi
-          echo "[+] Added Samsung minimized KDP driver"
-          cd drivers
-          cp "../../../kernel_patches/samsung/min_kdp/min_kdp.c" min_kdp.c
-          echo "obj-y += min_kdp.o" >> Makefile
 
       - name: LZ4KD & Lz4k_oplus Configuration
         if: ${{ inputs.use_zram }}
