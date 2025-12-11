@@ -17,7 +17,7 @@ on:
           - Next
           - MKSU
           - SukiSU
-        default: SukiSU
+        default: Official
       kernelsu_branch:
         description: "Select the ksu branch"
         required: true
@@ -26,7 +26,7 @@ on:
           - Stable
           - Dev
           - Other
-        default: Stable
+        default: Dev
       kernelsu_commit:
         description: "Optional KernelSU commit SHA"
         required: false
@@ -98,10 +98,15 @@ jobs:
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      kernelsu_commit: ${{ inputs.kernelsu_commit }}
   releasesuki:
     if: ${{ inputs.kernelsu_variant == 'SukiSU' }}
     uses: ./.github/workflows/releasesuki.yml
     secrets: inherit
+    with:
+      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      kernelsu_commit: ${{ inputs.kernelsu_commit }}
+      susfs_commit: ${{ inputs.susfs_commit }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -109,6 +114,10 @@ jobs:
     if: ${{ inputs.kernelsu_variant == 'Official' }}
     uses: ./.github/workflows/releaseksu.yml
     secrets: inherit
+    with:
+      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      kernelsu_commit: ${{ inputs.kernelsu_commit }}
+      susfs_commit: ${{ inputs.susfs_commit }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -116,6 +125,10 @@ jobs:
     if: ${{ inputs.kernelsu_variant == 'MKSU' }}
     uses: ./.github/workflows/releasemksu.yml
     secrets: inherit
+    with:
+      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      kernelsu_commit: ${{ inputs.kernelsu_commit }}
+      susfs_commit: ${{ inputs.susfs_commit }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -123,6 +136,10 @@ jobs:
     if: ${{ inputs.kernelsu_variant == 'Next' }}
     uses: ./.github/workflows/releasenext.yml
     secrets: inherit
+    with:
+      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+      kernelsu_commit: ${{ inputs.kernelsu_commit }}
+      susfs_commit: ${{ inputs.susfs_commit }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
