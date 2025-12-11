@@ -1,15 +1,14 @@
 name: Script Tester
 
 permissions:
-  contents: write  # Allow writing to repository contents (for pushing tags)
-  actions: write   # Allows triggering actions
-  
+  contents: write
+  actions: write
+
 on:
   workflow_dispatch:
     inputs:
       kernelsu_variant:
-        # description: "Select KernelSU | Note: Select MKSU for the standard version"
-        description: "Select KernelSU"
+        description: Select KernelSU
         required: true
         type: choice
         options:
@@ -17,30 +16,20 @@ on:
           - Next
           - MKSU
           - SukiSU
-        default: SukiSU
       kernelsu_branch:
-        description: "Select the ksu branch"
-        required: true
-        type: choice
-        options:
-          - Stable
-          - Dev
-          - Other
-        default: Stable
-      kernelsu_commit:
-        description: "Optional KernelSU commit SHA"
+        description: Select the ksu branch
         required: false
         type: string
       susfs_commit:
-        description: "Optional SUSFS commit SHA"
+        description: SUSFS Commit
+        required: false
+        type: string
+      kernelsu_commit:
+        description: KSU Commit
         required: false
         type: string
       version:
-        description: 'Custom version name (e.g. 6.6.77-android15-8<custom version name>/leave blank to use the default version number)'
-        required: false
-        type: string
-      build_time:
-        description: 'Set kernel build time (format see repository description)'
+        description: Custom version name (e.g. 6.6.77-android15-8<custom version name>/leave blank to use the default version number)
         required: false
         type: string
       use_zram:
@@ -59,24 +48,43 @@ on:
         type: boolean
         default: true
       supp_op:
-        description: 'Do you want to enable support for OnePlus 8E processor models? (No need to check if it is not the model)'
+        description: 'Do you want to enable SUPP_OP patches?'
         required: false
         type: boolean
         default: false
+      onlyAk3:
+        description: 'Only build AK3 artifacts?'
+        required: false
+        type: boolean
+        default: false
+      build_time:
+        description: Set kernel build time (format see repository description)
+        required: false
+        type: string
       get_manager:
-        description: 'Get the latest KSU Manager and SUSFS modules?'
+        description: Get the latest KSU Manager and SUSFS modules?
         required: true
         type: boolean
         default: true
-      onlyAk3:
-        description: 'Upload only AK3 compressed package? (No boot, faster download)'
-        required: false
+      make_release:
+        description: Make GitHub release (for tested builds)
+        required: true
         type: boolean
         default: false
 
 jobs:
+  build-kernel-a15-6-6:
+    uses: ./.github/workflows/build-kernel-a15-6-6.yml
+    secrets: inherit
+
+  get-ksu-manager:
+    uses: ./.github/workflows/get-ksu-manager.yml
+    secrets: inherit
 
   test-script-main:
+    needs:
+      - build-kernel-a15-6-6
+      - get-ksu-manager
     uses: ./.github/workflows/test-main.yml
     secrets: inherit
     with:
@@ -92,19 +100,23 @@ jobs:
       supp_op: ${{ inputs.supp_op }}
       onlyAk3: ${{ inputs.onlyAk3 }}
       build_time: ${{ inputs.build_time }}
+
   test-manager:
     if: ${{ inputs.get_manager }}
     uses: ./.github/workflows/test-manager.yml
     secrets: inherit
-    with:
-      kernelsu_variant: ${{ inputs.kernelsu_variant }}
+    needs:
+      - build-kernel-a15-6-6
+      - get-ksu-manager
+
   test-releasesuki:
     if: ${{ inputs.kernelsu_variant == 'SukiSU' }}
-    uses: ./.github/workflows/testsuki.yml
+    uses: ./.github/workflows/testksu.yml
     secrets: inherit
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
+
   test-releaseksu:
     if: ${{ inputs.kernelsu_variant == 'Official' }}
     uses: ./.github/workflows/testksu.yml
@@ -112,6 +124,7 @@ jobs:
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
+
   test-releasemksu:
     if: ${{ inputs.kernelsu_variant == 'MKSU' }}
     uses: ./.github/workflows/testmksu.yml
@@ -119,6 +132,7 @@ jobs:
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
+
   test-releasenext:
     if: ${{ inputs.kernelsu_variant == 'Next' }}
     uses: ./.github/workflows/testnext.yml
