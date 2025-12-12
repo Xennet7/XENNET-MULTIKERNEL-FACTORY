@@ -39,7 +39,7 @@ on:
         description: 'Custom version name (e.g. 6.6.77-android15-8<custom version name>/leave blank to use the default version number)'
         required: false
         type: string
-        default: 4k-Xennet
+        default: -4k-Xennet
       build_time:
         description: 'Set kernel build time (format see repository description)'
         required: false
