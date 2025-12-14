@@ -71,6 +71,10 @@ on:
 jobs:
   build-kernel-kernelsu-susfs:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [normal, bypass]
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"
       CCACHE_NOHASHDIR: "true"
@@ -538,7 +542,7 @@ jobs:
           path: patch-rejects
           compression-level: 9
 
-      - name: Apply HYMOFS patch (optional)
+      - name: Apply HYMOFS patch
         if: ${{ inputs.use_hymofs }}
         run: |
           set -e
@@ -653,10 +657,8 @@ jobs:
                 echo "Warning: File $CONFIG_FILE does not contain string CONFIG_ZSMALLOC."
                 echo "CONFIG_ZSMALLOC=y" >> "$CONFIG_FILE"
             fi
-
             sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$CONFIG_FILE"
           fi
-
           if [ "${{ inputs.kernel_version }}" = "6.6" ]; then
             echo "CONFIG_ZSMALLOC=y" >> "$CONFIG_FILE"
             sed -i 's/CONFIG_ZRAM=m/CONFIG_ZRAM=y/g' "$CONFIG_FILE"
@@ -768,10 +770,8 @@ jobs:
         run: |
           echo "Change to the configuration directory: $CONFIG..."
           cd "$CONFIG"
-
           # Initialize
           CURRENT_TIME=""
-
           if [ ! -z "${{ inputs.build_time }}" ]; then
             echo "Build time is not empty"
             date -d "${{ inputs.build_time }}" >/dev/null 2>&1 || echo "Warning: Variable '${{ inputs.build_time }}' is not in a valid date format!"
@@ -779,10 +779,8 @@ jobs:
           else
             echo "If the build time is empty, use the current time."
             CURRENT_TIME=$(date -u +"%a %b %d %H:%M:%S UTC %Y")
-          fi
-          
+          fi          
           echo "CURRENT_TIME=$CURRENT_TIME"
-
           # Set the build time to the `CURRENT_TIME` variable above (5 series)
           perl -pi -e "s{UTS_VERSION=\"\\\$\(echo \\\$UTS_VERSION \\\$CONFIG_FLAGS \\\$TIMESTAMP \\| cut -b -\\\$UTS_LEN\)\"}{UTS_VERSION=\"#1 SMP PREEMPT $CURRENT_TIME\"}" ./common/scripts/mkcompile_h
           if [ -f "build/build.sh" ]; then
@@ -802,7 +800,6 @@ jobs:
         run: |
           echo "Change to the configuration directory: $CONFIG..."
           cd "$CONFIG"
-
           if [ ! -z ${{ inputs.version }} ]; then
             echo "The version number is not empty"
             sed -i '$s|echo "\$res"|echo "${{ inputs.version }}"|' ./common/scripts/setlocalversion
@@ -810,7 +807,6 @@ jobs:
           elif [ ! -f "build/build.sh" ]; then
             echo "The version number is empty if compiled with bazel, and kmi is added if bazel is used"
             cd ./common
-
             # 6.1
             kmi="-android14-11-g$(git rev-parse --verify HEAD | cut -c1-13)"
             echo "KMI=$kmi"
@@ -838,7 +834,6 @@ jobs:
           set -euo pipefail
           echo "Looking for Image at: $CONFIG/bazel-bin/common/kernel_aarch64/Image"
           selected="$CONFIG/bazel-bin/common/kernel_aarch64/Image"
-
           if [ ! -f "$selected" ]; then
             echo "ERROR: Image not found at expected path: $selected"
             # fallback: try to find any Image under $CONFIG
@@ -850,31 +845,23 @@ jobs:
               exit 1
             fi
           fi
-
           echo "Selected artifact: $selected"
-
           # Extract complete Linux version line from Image
           LINUX_LINE=$(strings "$selected" | grep -m1 "Linux version" || true)
-
           if [ -z "$LINUX_LINE" ]; then
             echo "ERROR: Could not find 'Linux version' inside Image!"
             exit 1
           fi
-
           echo "Found Linux line: $LINUX_LINE"
-
           # Kernel name is the 3rd token in "Linux version <name> ..."
           KERNEL_NAME=$(echo "$LINUX_LINE" | awk '{print $3}')
-
           # Build time: text after 'SMP PREEMPT ' (falls back to everything after 'SMP' or 'PREEMPT')
           BUILD_TIME=$(echo "$LINUX_LINE" | sed -n 's/.*SMP PREEMPT[[:space:]]*//p; s/.*SMP[[:space:]]*//p; s/.*PREEMPT[[:space:]]*//p' | sed -n '1p' | tr -s ' ' ' ')
-
           echo "----------------------------------------"
           echo "Kernel artifact: $selected"
           echo "Kernel Name    : $KERNEL_NAME"
           echo "Build Time     : $BUILD_TIME"
           echo "----------------------------------------"
-
           # export for later steps
           #echo "BUILT_KERNEL_ARTIFACT=$selected" >> $GITHUB_ENV
           #echo "BUILT_KERNEL_NAME=$KERNEL_NAME" >> $GITHUB_ENV
@@ -905,7 +892,6 @@ jobs:
             rm -rf Image
             mv oImage Image
             cd ../../..      
-
 
       - name: Define KSU Build Naming
         run: |
