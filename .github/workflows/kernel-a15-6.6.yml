@@ -45,6 +45,11 @@ on:
         required: true
         type: boolean
         default: true
+      use_hymofs:
+        description: 'Enable HYMOFS (HymoFS) filesystem patch'
+        required: false
+        type: boolean
+        default: true
       supp_op:
         description: 'Do you want to enable support for OnePlus 8E processor models?'
         required: false
@@ -116,6 +121,7 @@ jobs:
       use_zram: ${{ inputs.use_zram }}
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
+      use_hymofs: ${{ inputs.use_hymofs }}
       supp_op: ${{ inputs.supp_op || false }}
       onlyAk3: ${{ inputs.onlyAk3 || false }}
       build_time: ${{ inputs.build_time || '' }}
