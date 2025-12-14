@@ -10,7 +10,7 @@ on:
       asset_pattern:
         description: "Enter filename pattern(s), comma-separated. Example: XSUKi-*.zip,XKNXT-*-AnyKernel3.zip"
         required: true
-        default: "XSUKI-*.zip"
+        default: "XKNSU-*.zip"
 
 jobs:
   telegram-upload:
