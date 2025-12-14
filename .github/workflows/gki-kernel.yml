@@ -576,9 +576,9 @@ jobs:
         if: ${{ matrix.build_type == 'Bypass' }}
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" || "${{ inputs.kernel_version }}" == "6.12" ]]; then
-            sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$KERNEL_ROOT/common/kernel/module/version.c"
+            sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$CONFIG/common/kernel/module/version.c"
           else
-            sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$KERNEL_ROOT/common/kernel/module.c"
+            sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$CONFIG/common/kernel/module.c"
           fi
 
       - name: Upgrade LZ4 to 1.10.0
