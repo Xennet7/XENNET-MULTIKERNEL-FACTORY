@@ -60,6 +60,11 @@ on:
         required: true
         type: boolean
         default: false
+      use_hymofs:
+        description: 'Enable HYMOFS (HymoFS) filesystem patch'
+        required: false
+        type: boolean
+        default: true
       supp_op:
         description: 'Do you want to enable support for OnePlus 8E processor models? (No need to check if it is not the model)'
         required: false
