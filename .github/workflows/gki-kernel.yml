@@ -51,7 +51,7 @@ on:
       use_kpm:
         required: true
         type: boolean
-        default: true
+        default: false
       use_hymofs:
         required: false
         type: boolean
