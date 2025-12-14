@@ -544,7 +544,7 @@ jobs:
           echo "Applying HYMOFS patch..."
           cd "$CONFIG/common"
           patch -p1 -F 3 < "../../hymofs/patch/hymofs_with_susfs.patch"
-          echo "CONFIG_HYMOFS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_HYMOFS=y" >> arch/arm64/configs/gki_defconfig
           echo "HYMOFS patch applied successfully"
 
       - name: BBG patch
