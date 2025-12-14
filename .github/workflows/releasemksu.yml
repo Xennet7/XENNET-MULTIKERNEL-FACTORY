@@ -215,6 +215,7 @@ jobs:
           **✨ XENNET MKSU**
           **🌀 XMKSU v${{ env.KSUVER }}**
           **🛡️ SUSFS ඞ v2.0.0**
+          **🧬 HymoFS Enabled (Advanced FS Stealth & Integrity)**
           **🌐 IPSet Support for Advanced Network Filtering**
           **🟢 WireGuard Support**
           **🚀 BBR v1 Support**
