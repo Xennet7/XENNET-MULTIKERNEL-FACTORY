@@ -378,6 +378,10 @@ jobs:
             KSU_VERSION=$((40000 + KSU_GIT_VERSION - 2815))
           elif [ "$KERNELSU_VARIANT" = "Official" ] || [ "$KERNELSU_VARIANT" = "MKSU" ]; then
             KSU_VERSION=$((30000 + KSU_GIT_VERSION))
+          elif [ "$KERNELSU_VARIANT" = "Next" ]; then
+            KSU_VERSION=$((30001 + KSU_GIT_VERSION))  
+          elif [ "$KERNELSU_VARIANT" = "Next" ]; then
+            KSU_VERSION=$((30001 + KSU_GIT_VERSION))
           fi
           echo "Determined KSU numeric version: $KSU_VERSION (commit: $(git rev-parse --short HEAD))"
           echo $KSU_VERSION
