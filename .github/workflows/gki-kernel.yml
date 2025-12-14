@@ -486,12 +486,6 @@ jobs:
              fi
             fi
           
-
-          #if [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
-            #cp ../../zzh_patch/rm_devpt.patch ./
-            #patch -p1 < rm_devpt.patch
-          #fi
-  
       - name: Apply HOOKS patch
         run: |
           echo "Change to the configuration directory: $CONFIG..."
@@ -579,7 +573,7 @@ jobs:
           fi
 
       - name: Apply Module Check Bypass
-        if: ${{ matrix.build_type == 'Bypass' || matrix.build_type == 'Hakan' }}
+        if: ${{ matrix.build_type == 'Bypass' }}
         run: |
           if [[ "${{ inputs.kernel_version }}" == "6.1" || "${{ inputs.kernel_version }}" == "6.6" || "${{ inputs.kernel_version }}" == "6.12" ]]; then
             sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$KERNEL_ROOT/common/kernel/module/version.c"
