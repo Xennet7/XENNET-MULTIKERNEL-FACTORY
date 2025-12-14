@@ -96,6 +96,7 @@ jobs:
       use_zram: ${{ inputs.use_zram }}
       use_bbg: ${{ inputs.use_bbg }}
       use_kpm: ${{ inputs.use_kpm }}
+      use_hymofs: ${{ inputs.use_hymofs }}
       supp_op: ${{ inputs.supp_op }}
       onlyAk3: ${{ inputs.onlyAk3 }}
       build_time: ${{ inputs.build_time }}
