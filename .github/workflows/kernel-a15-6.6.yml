@@ -44,7 +44,7 @@ on:
         description: 'Do you want the KPM function enabled?'
         required: true
         type: boolean
-        default: true
+        default: false
       use_hymofs:
         description: 'Enable HYMOFS (HymoFS) filesystem patch'
         required: false
@@ -120,7 +120,7 @@ jobs:
       version: ${{ inputs.version || '' }}
       use_zram: ${{ inputs.use_zram }}
       use_bbg: ${{ inputs.use_bbg }}
-      use_kpm: ${{ inputs.use_kpm }}
+      use_kpm: ${{ inputs.use_kpm || false }}
       use_hymofs: ${{ inputs.use_hymofs }}
       supp_op: ${{ inputs.supp_op || false }}
       onlyAk3: ${{ inputs.onlyAk3 || false }}
