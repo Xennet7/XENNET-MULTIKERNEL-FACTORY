@@ -214,8 +214,8 @@ jobs:
       
           **✨ XENNET KERNELSU**
           **🌀 XKNSU v${{ env.KSUVER }}**
-          **🧬 HymoFS Enabled (Advanced FS Stealth & Integrity)**
           **🛡️ SUSFS ඞ v2.0.0**
+          **🧬 HymoFS Enabled**
           **🌐 IPSet Support for Advanced Network Filtering**
           **🟢 WireGuard Support**
           **🚀 BBR v1 Support**
