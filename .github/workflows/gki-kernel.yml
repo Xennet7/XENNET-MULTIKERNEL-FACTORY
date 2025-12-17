@@ -570,6 +570,21 @@ jobs:
             sed -i '/bad_version:/{:a;n;/return 0;/{s/return 0;/return 1;/;b};ba}' "$CONFIG/common/kernel/module.c"
           fi
 
+      - name: Fix WiFi and Bluetooth on Samsung 6.6 GKI devices
+        if: ${{ ( inputs.kernel_version == '6.6' ) }}
+        run: |
+          cd "$CONFIG/common"
+          SYMBOL_LIST=android/abi_gki_aarch64_galaxy
+          echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
+          echo "kdp_usecount_dec_and_test" >> $SYMBOL_LIST
+          echo "kdp_usecount_inc" >> $SYMBOL_LIST
+          "../../kernel_patches/samsung/min_kdp/add-min_kdp-symbols.patch"
+          if patch -p1 --dry-run < "../../kernel_patches/samsung/min_kdp/add-min_kdp-symbols.patch"; then
+            patch -p1 --no-backup-if-mismatch < "../../kernel_patches/samsung/min_kdp/add-min_kdp-symbols.patch"
+          fi
+          cp "../../kernel_patches/samsung/min_kdp/min_kdp.c" drivers/min_kdp.c
+          echo "obj-y += min_kdp.o" >> drivers/Makefile
+
       - name: Upgrade LZ4 to 1.10.0
         if: ${{ inputs.use_zram }}
         run: |
