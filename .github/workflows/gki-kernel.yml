@@ -578,7 +578,6 @@ jobs:
           echo "kdp_set_cred_non_rcu" >> $SYMBOL_LIST
           echo "kdp_usecount_dec_and_test" >> $SYMBOL_LIST
           echo "kdp_usecount_inc" >> $SYMBOL_LIST
-          "../../kernel_patches/samsung/min_kdp/add-min_kdp-symbols.patch"
           if patch -p1 --dry-run < "../../kernel_patches/samsung/min_kdp/add-min_kdp-symbols.patch"; then
             patch -p1 --no-backup-if-mismatch < "../../kernel_patches/samsung/min_kdp/add-min_kdp-symbols.patch"
           fi
