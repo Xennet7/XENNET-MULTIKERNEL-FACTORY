@@ -424,35 +424,23 @@ jobs:
             cd ./KernelSU
             cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./ 
             patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
-            # echo "Applying Official specific patches..."
-            # cp ../../zzh_patch/mksu_core_hook.c.patch ./
-            # patch -p1 --fuzz=3 < mksu_core_hook.c.patch
 
           elif [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
-            # Temporarily restore the dev compilation of KSU-NEXT
             echo "Applying SUSFS patches for KernelSU-Next..."
             cd ./KernelSU-Next
-            if [ "$BRANCH" == "-s next" ]; then
-              echo "Currently in the Dev branch KernelSU-Next"
-              cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
-              patch -p1 < 10_enable_susfs_for_ksu.patch || true
-              echo "Applying temporary fix"
-              cp ../../zzh_patch/next-patch/* ./
-              patch -p1 < fix_apk_sign.c.patch
-              patch -p1 < fix_core_hook.c.patch
-              patch -p1 < fix_sucompat.c.patch
-              patch -p1 < fix_kernel_compat.c.patch
-            fi
+            cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
+            patch -p1 --forward < 10_enable_susfs_for_ksu.patch  || true
+            for file in $(find ./kernel -maxdepth 2 -name "*.rej" -exec basename {} .rej \;); do
+                echo "Patching file: $file with fix_$file.patch"
+                patch -p1 --forward < "../../../kernel_patches/next/susfs_fix_patches/v2.0.0/fix_$file.patch"
+            done
             
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             echo "Applying SUSFS patches for MKSU..."
             cd ./KernelSU
             cp ../../susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch ./
             patch -p1 --forward < 10_enable_susfs_for_ksu.patch || true
-            # echo "Applying MKSU specific patches..."
-            # cp ../../zzh_patch/mksu_core_hook.c.patch ./
-            # patch -p1 --fuzz=3 < mksu_core_hook.c.patch
-
+            
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             echo "Applying SUSFS patches for SukiSU..."
             cd ./KernelSU
@@ -465,27 +453,28 @@ jobs:
           cd ../common
 
           # Fake kernel patch to fix failures
-            fake_patched=0
+          fake_patched=0
+          if [ "${{ inputs.android_version }}" = "android15" ] && [ "${{ inputs.kernel_version }}" = "6.6" ]; then
+            if ! grep -qxF $'\tunsigned int nr_subpages = __PAGE_SIZE / PAGE_SIZE;' ./fs/proc/task_mmu.c; then
+              echo "nr_subpages Line not found. Fake Patching!"
+              sed -i -e '/int ret = 0, copied = 0;/a \\tunsigned int nr_subpages \= __PAGE_SIZE \/ PAGE_SIZE;' -e '/int ret = 0, copied = 0;/a \\tpagemap_entry_t \*res = NULL;' ./fs/proc/task_mmu.c
+              fake_patched=1
+            fi
+          fi
+        
+          patch -p1 --fuzz=3 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
+        
+          # Revert Fake kernel patch
+          if [ "$fake_patched" = 1 ]; then
             if [ "${{ inputs.android_version }}" = "android15" ] && [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-              if ! grep -qxF $'\tunsigned int nr_subpages = __PAGE_SIZE / PAGE_SIZE;' ./fs/proc/task_mmu.c; then
-                echo "nr_subpages Line not found. Fake Patching!"
-                sed -i -e '/int ret = 0, copied = 0;/a \\tunsigned int nr_subpages \= __PAGE_SIZE \/ PAGE_SIZE;' -e '/int ret = 0, copied = 0;/a \\tpagemap_entry_t \*res = NULL;' ./fs/proc/task_mmu.c
-                fake_patched=1
+              if grep -qxF $'\tunsigned int nr_subpages = __PAGE_SIZE / PAGE_SIZE;' ./fs/proc/task_mmu.c; then
+                echo "nr_subpages Line found. Revert Fake Patching!"
+                sed -i -e '/unsigned int nr_subpages \= __PAGE_SIZE \/ PAGE_SIZE;/d' -e '/pagemap_entry_t \*res = NULL;/d' ./fs/proc/task_mmu.c
               fi
             fi
-        
-            patch -p1 --fuzz=3 < 50_add_susfs_in_gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}.patch || true
-        
-            # Revert Fake kernel patch
-            if [ "$fake_patched" = 1 ]; then
-              if [ "${{ inputs.android_version }}" = "android15" ] && [ "${{ inputs.kernel_version }}" = "6.6" ]; then
-                if grep -qxF $'\tunsigned int nr_subpages = __PAGE_SIZE / PAGE_SIZE;' ./fs/proc/task_mmu.c; then
-                  echo "nr_subpages Line found. Revert Fake Patching!"
-                  sed -i -e '/unsigned int nr_subpages \= __PAGE_SIZE \/ PAGE_SIZE;/d' -e '/pagemap_entry_t \*res = NULL;/d' ./fs/proc/task_mmu.c
-                fi
-             fi
-            fi
-          
+          fi
+          echo "✅ SUSFS patches applied"
+            
       - name: Apply HOOKS patch
         run: |
           echo "Change to the configuration directory: $CONFIG..."
@@ -542,7 +531,7 @@ jobs:
           set -e
           cd "$CONFIG/common"
           echo "Applying HYMOFS patch..."
-          wget https://raw.githubusercontent.com/Anatdx/HymoFS/refs/heads/main/patch/hymofs_with_susfs.patch
+          wget https://raw.githubusercontent.com/Anatdx/HymoFS/refs/heads/android15_6.6/patch/hymofs_with_susfs.patch
           patch -p1 -F 3 < hymofs_with_susfs.patch
           echo "CONFIG_HYMOFS=y" >> arch/arm64/configs/gki_defconfig 
           echo "HYMOFS patch applied successfully"
