@@ -64,6 +64,10 @@ on:
         description: 'Set kernel build time (format see repository description)'
         required: false
         type: string
+    outputs:
+      ksuver:
+        description: "KernelSU numeric version"
+        value: ${{ jobs.build-kernel-a15-6-6-kernelsu-susfs.outputs.ksuver }}
 
 jobs:
   build-kernel-a15-6-6-kernelsu-susfs:
