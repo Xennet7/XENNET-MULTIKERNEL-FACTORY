@@ -75,6 +75,8 @@ on:
 jobs:
   build-kernel-kernelsu-susfs:
     runs-on: ubuntu-latest
+    outputs:
+      ksuver: ${{ steps.get-ksuver.outputs.ksuver }}
     strategy:
       fail-fast: false
       matrix:
@@ -339,6 +341,7 @@ jobs:
           fi
 
       - name: Getting KernelSU Version
+        id: get-ksuver
         run: |
           case "${{ inputs.kernelsu_variant }}" in
             SukiSU)
@@ -370,7 +373,8 @@ jobs:
           KSU_VERSION=$((BASE_VERSION + COMMIT_COUNT - OFFSET))
           COMMIT_HASH=$(git -C "$KSU_DIR" rev-parse --short HEAD)
           echo "Determined KSU numeric version: $KSU_VERSION (commit: $COMMIT_HASH)"
-          echo "KSUVER=$KSU_VERSION" >> "$GITHUB_ENV"
+          echo "ksuver=$KSU_VERSION" >> "$GITHUB_OUTPUT"
+          echo "ksuver=$KSU_VERSION" >> "$GITHUB_ENV"
       
       - name: SUKISU Manager Information
         if: ${{ inputs.kernelsu_variant == 'SukiSU' }}
@@ -494,7 +498,7 @@ jobs:
       - name: Upload Build Rejects
         uses: actions/upload-artifact@v4
         with:
-          name: Rejects-${{ env.KSUVER }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}
+          name: Rejects-${{ env.ksuver }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}
           path: patch-rejects
           compression-level: 9
 
@@ -911,13 +915,13 @@ jobs:
           if [ -n "$ACTUAL_SUBLEVEL" ]; then
             SUBLEVEL_FOR_NAME="$ACTUAL_SUBLEVEL"
           fi          
-          ZIP_NAME="$XNAME-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-${{ matrix.build_type }}-AnyKernel3.zip"
-          #ZIP_NAME="$XNAME-$KSUVER-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-AnyKernel3.zip"
+          ZIP_NAME="$XNAME-$ksuver-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-${{ matrix.build_type }}-AnyKernel3.zip"
+          #ZIP_NAME="$XNAME-$ksuver-${{ inputs.android_version }}-${{ inputs.kernel_version }}.$SUBLEVEL_FOR_NAME-${{ inputs.os_patch_level }}-AnyKernel3.zip"
           echo "Creating zip file: $ZIP_NAME..."
           zip -r "../$ZIP_NAME" ./*  
               
       - name: Upload AnyKernel3 ZIP
         uses: actions/upload-artifact@v4
         with:          
-          name: ${{ env.XNAME }}-${{ env.KSUVER }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}-${{ matrix.build_type }}-AnyKernel3
+          name: ${{ env.XNAME }}-${{ env.ksuver }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}-${{ matrix.build_type }}-AnyKernel3
           path: "*.zip"
