@@ -16,6 +16,9 @@ on:
      susfs_commit:
        required: false
        type: string
+     ksuver:                 
+        required: true
+        type: string
        
   workflow_dispatch:
    inputs:
@@ -28,12 +31,16 @@ on:
      susfs_commit:
        required: false
        type: string
+     ksuver:                 
+        required: true
+        type: string
 
 jobs:
 
   release:
     runs-on: ubuntu-latest
     env:
+      KSU_VERSION: ${{ inputs.ksuver }}
       GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
       RELEASE_NAME: "GKI Kernels With XKNSU & SUSFS v2.0.0"
       RELEASE_BODY:
