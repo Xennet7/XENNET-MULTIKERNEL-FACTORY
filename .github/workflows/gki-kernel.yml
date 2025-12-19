@@ -67,6 +67,10 @@ on:
       build_time:
         required: false
         type: string
+    outputs:
+      ksuver:
+        description: "KernelSU numeric version"
+        value: ${{ jobs.build-kernel-kernelsu-susfs.outputs.ksuver }}
 
 jobs:
   build-kernel-kernelsu-susfs:
