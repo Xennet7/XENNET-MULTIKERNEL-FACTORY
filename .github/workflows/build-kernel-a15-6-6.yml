@@ -102,11 +102,13 @@ jobs:
       build_time: ${{ inputs.build_time }}
   get-ksu-manager:
     if: ${{ inputs.get_manager }}
+    needs: build-kernel-a15-6-6
     uses: ./.github/workflows/get-manager.yml
     secrets: inherit
     with:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
+      ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
   releasesuki:
     if: ${{ inputs.kernelsu_variant == 'SukiSU' }}
     uses: ./.github/workflows/releasesuki.yml
@@ -115,6 +117,7 @@ jobs:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       susfs_commit: ${{ inputs.susfs_commit }}
+      ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -126,6 +129,7 @@ jobs:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       susfs_commit: ${{ inputs.susfs_commit }}
+      ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -137,6 +141,7 @@ jobs:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       susfs_commit: ${{ inputs.susfs_commit }}
+      ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -148,6 +153,7 @@ jobs:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       susfs_commit: ${{ inputs.susfs_commit }}
+      ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
