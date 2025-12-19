@@ -16,6 +16,9 @@ on:
      susfs_commit:
        required: false
        type: string
+     ksuver:                 
+        required: true
+        type: string
        
   workflow_dispatch:
    inputs:
@@ -28,11 +31,15 @@ on:
      susfs_commit:
        required: false
        type: string
-jobs:
+     ksuver:                 
+        required: true
+        type: string
 
+jobs:
   release:
     runs-on: ubuntu-latest
     env:
+      KSU_VERSION: ${{ inputs.ksuver }}
       GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
       RELEASE_NAME: "GKI Kernels With MKSU & SUSFS v2.0.0"
       RELEASE_BODY:
@@ -41,67 +48,6 @@ jobs:
     
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Get KSU Versions
-        run: |
-          set -euo pipefail
-          KERNELSU_VARIANT="${{ inputs.kernelsu_variant }}"
-          KERNELSU_COMMIT="${{ inputs.kernelsu_commit }}"   # may be empty
-          echo "Resolving KSU repo for variant: $KERNELSU_VARIANT (commit: ${KERNELSU_COMMIT:-none})"
-          if [ "$KERNELSU_VARIANT" = "Next" ]; then
-            echo "This is the Next variant"
-            git clone https://github.com/KernelSU-Next/KernelSU-Next.git Verfold
-          elif [ "$KERNELSU_VARIANT" = "SukiSU" ]; then
-            echo "This is the SukiSU variant"
-            git clone https://github.com/SukiSU-Ultra/SukiSU-Ultra.git Verfold
-          elif [ "$KERNELSU_VARIANT" = "Official" ]; then
-            echo "This is the Official variant"
-            git clone https://github.com/tiann/KernelSU.git Verfold
-          elif [ "$KERNELSU_VARIANT" = "MKSU" ]; then
-            echo "This is the MKSU variant"
-            git clone https://github.com/5ec1cff/KernelSU.git Verfold
-          else
-            echo "Unknown variant: $KERNELSU_VARIANT"
-            exit 1
-          fi
-          cd Verfold
-          if [ -n "$KERNELSU_COMMIT" ]; then
-          echo "User requested KernelSU commit: $KERNELSU_COMMIT — fetching and checking out"
-          # Try to fetch the commit quickly (shallow), but if that makes history incomplete, unshallow.
-          # 1) Try shallow fetch of the specific commit (fast)
-          git fetch --depth=1 origin "$KERNELSU_COMMIT" || true
-          # 2) If the repository is shallow or the commit has no ancestors locally, try to unshallow to get full history
-          #    (this makes git rev-list --count return the repo-wide count).
-          if git rev-parse --is-shallow-repository >/dev/null 2>&1 && [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
-            echo "Repository is shallow — attempting to unshallow to get full history..."
-            git fetch --unshallow origin || {
-              echo "unshallow failed, attempting deep fetch of all refs..."
-              git fetch --depth=50000 origin || true
-            }
-          fi
-          # Ensure the commit is present, try fetching it fully if needed
-          git fetch origin "$KERNELSU_COMMIT" || git fetch --depth=1 origin "$KERNELSU_COMMIT" || true
-          # Finally checkout the exact commit detached
-          git checkout --detach "$KERNELSU_COMMIT"
-          else
-          echo "No specific commit requested — using repo HEAD"
-          fi
-          # Calculating the KSU version number based on commit count
-          KSU_GIT_VERSION=$(git rev-list --count HEAD)
-          VAR=$([[ "$KERNELSU_VARIANT" == "SukiSU" ]] && echo 700 || echo 200)
-          KSU_VERSION=$((10000 + KSU_GIT_VERSION + VAR))
-          if [ "$KERNELSU_VARIANT" = "SukiSU" ]; then
-            KSU_VERSION=$((40000 + KSU_GIT_VERSION - 2815))
-          elif [ "$KERNELSU_VARIANT" = "Official" ] || [ "$KERNELSU_VARIANT" = "MKSU" ]; then
-            KSU_VERSION=$((30000 + KSU_GIT_VERSION))
-          fi
-          echo "Determined KSU numeric version: $KSU_VERSION (commit: $(git rev-parse --short HEAD))"
-          echo $KSU_VERSION
-          echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-          # cleanup
-          echo "Deleting the directory"
-          cd ..
-          rm -rf Verfold  
 
       - name: Get commit hashes and generate commit URLs
         run: |
