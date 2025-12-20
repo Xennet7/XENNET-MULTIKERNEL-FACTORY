@@ -337,6 +337,7 @@ jobs:
           fi
 
       - name: Getting KernelSU Version
+        if: ${{ inputs.kernelsu_variant != 'SukiSU' }}
         id: get-ksuver
         run: |
           case "${{ inputs.kernelsu_variant }}" in
