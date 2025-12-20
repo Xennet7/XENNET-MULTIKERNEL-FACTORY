@@ -407,9 +407,9 @@ jobs:
             patch -p1 --forward < 10_enable_susfs_for_ksu.patch  || true
             for file in $(find ./kernel -maxdepth 2 -name "*.rej" -exec basename {} .rej \;); do
                 echo "Patching file: $file with fix_$file.patch"
-                patch -p1 --forward < "../../../kernel_patches/next/susfs_fix_patches/v2.0.0/fix_$file.patch"
+                patch -p1 --forward < "../../kernel_patches/next/susfs_fix_patches/v2.0.0/fix_$file.patch"
             done
-            patch -p1 --forward < "../../../kernel_patches/next/susfs_fix_patches/$susfs_version/overwrite_hook_mode.patch"
+            patch -p1 --forward < "../../kernel_patches/next/susfs_fix_patches/$susfs_version/overwrite_hook_mode.patch"
             
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             echo "Applying SUSFS patches for MKSU..."
