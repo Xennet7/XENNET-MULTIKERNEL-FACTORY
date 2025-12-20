@@ -15,6 +15,11 @@ on:
       ksuver:                 
         required: true
         type: string
+      enable_susfs:
+        description: "Enable SUSFS"
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   get_ksu_manager:
@@ -265,6 +270,7 @@ jobs:
           fi
           
       - name: Adding the SUSFS module
+        if: ${{ inputs.enable_susfs }}
         id: add_SUSFS
         continue-on-error: true
         run: |
