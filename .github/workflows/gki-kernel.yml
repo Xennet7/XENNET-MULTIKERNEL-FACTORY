@@ -509,6 +509,27 @@ jobs:
             echo "CONFIG_HYMOFS=y" >> arch/arm64/configs/gki_defconfig
           echo "HYMOFS (with SUSFS) applied successfully"
 
+
+      - name: Apply Performance Patches
+        if: false
+        run: |
+          cd "$CONFIG/common"
+          MIN_VERSION="5.16"
+          cp "../../kernel_patches/common/optimized_mem_operations.patch" ./
+          patch -p1 --forward < optimized_mem_operations.patch
+          cp "../../kernel_patches/common/file_struct_8bytes_align.patch" ./
+          patch -p1 --forward < file_struct_8bytes_align.patch
+          cp "../../kernel_patches/common/reduce_cache_pressure.patch" ./
+          patch -p1 --forward < reduce_cache_pressure.patch
+          if [ "$(printf '%s\n' "${{ inputs.kernel_version }}" "$MIN_VERSION" | sort -V | head -n1)" = "${{ inputs.kernel_version }}" ]; then
+            cp "../../kernel_patches/common/clear_page_16bytes_align.patch" ./
+            patch -p1 --forward < clear_page_16bytes_align.patch
+          else
+            cp "../../kernel_patches/common/clear_page_16bytes_align.patch" ./
+            sed -e 's/SYM_FUNC_START_PI(clear_page)/SYM_FUNC_START_PI(__pi_clear_page)/' clear_page_16bytes_align.patch > clear_page_16bytes_align__pi.patch
+            patch -p1 -F3 --forward < clear_page_16bytes_align__pi.patch
+          fi
+
       - name: BBG patch
         if: ${{ inputs.use_bbg }}
         run: |
