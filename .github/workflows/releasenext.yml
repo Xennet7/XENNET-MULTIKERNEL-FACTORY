@@ -5,29 +5,35 @@ permissions:
   actions: write
 
 on:
-  workflow_call: # This allows this workflow to be called from another workflow
-   inputs:
+   workflow_call: # This allows this workflow to be called from another workflow
+    inputs:
      kernelsu_variant:
        required: true
        type: string
      kernelsu_commit:
        required: false
        type: string
+     enable_susfs:
+        required: false
+        type: boolean
      susfs_commit:
        required: false
        type: string
      ksuver:                 
         required: true
-        type: string
+        type: string     
        
-  workflow_dispatch:
-   inputs:
+   workflow_dispatch:
+    inputs:
      kernelsu_variant:
        required: true
        type: string
      kernelsu_commit:
        required: false
        type: string
+     enable_susfs:
+        required: false
+        type: boolean
      susfs_commit:
        required: false
        type: string
@@ -51,6 +57,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get commit hashes and generate commit URLs
+        if: ${{ inputs.enable_susfs }}
         run: |
           GITLAB_OWNER="simonpunk"
           GITLAB_REPO="susfs4ksu"
@@ -155,6 +162,7 @@ jobs:
           ls -lh downloaded-artifacts/ || echo "No extracted files found."
      
       - name: Set release body
+        if: ${{ inputs.enable_susfs }}
         run: |
           cat << EOF > release_body.md
       
@@ -174,6 +182,26 @@ jobs:
           
           -> SUSFS4KSU:
             -> gki-android15-6.6: [${{ env.COMMIT_HASH_gki_android15_6_6 }}](${{ env.COMMIT_URL_gki_android15_6_6 }})
+          EOF
+
+      - name: Set release body
+        if: ${{ !inputs.enable_susfs }}
+        run: |
+          cat << EOF > release_body.md
+      
+          **✨ XENNET KernelSU NEXT**
+          **🌀 XKNXT v${{ env.KSUVER }}**
+          **🧬 HymoFS Enabled**
+          **🌐 IPSet Support for Advanced Network Filtering**
+          **🟢 WireGuard Support**
+          **🚀 BBR v1 Support**
+          **🔒 BBG Protection to Prevent Unauthorized Writes to Certain Partitions**
+        
+          Commit Hashes (at the time of release):
+          -> XENNET KernelSU NEXT: [${{ env.WKSU_REF }}](${{ env.WKSU_URL }})
+
+          -> Baseband-guard: [${{ env.BBG_REF }}](${{ env.BBG_URL }})
+          
           EOF
 
       - name: Create GitHub Release
