@@ -1,4 +1,4 @@
-name: Release KSU
+name: Release KSU Official
 
 permissions:
   contents: write
@@ -40,19 +40,16 @@ on:
      ksuver:                 
         required: true
         type: string
-
 jobs:
 
   release:
     runs-on: ubuntu-latest
     env:
-      KSU_VER: ${{ inputs.ksuver }}
+      KSUVER: ${{ inputs.ksuver }}
       GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-      RELEASE_NAME: "GKI Kernels With XKNSU & SUSFS v2.0.0"
-      RELEASE_BODY:
       
     steps:
-     
+          
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -103,6 +100,13 @@ jobs:
           BBG_URL="https://github.com/vc-teahouse/Baseband-guard/commit/$BBG_REF"
           echo "BBG_REF=$BBG_REF" >> $GITHUB_ENV
           echo "BBG_URL=$BBG_URL" >> $GITHUB_ENV
+
+          # Calculate the SUSFS version number
+          INFO="https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android15-6.6/ksu_module_susfs/module.prop\?ref_type\=heads"
+          SUSVER=$(curl -s $INFO | awk -F '=' '$1 == "version" { print $2 }')
+          echo "SUSFS_VER=$SUSVER" >> $GITHUB_ENV
+          echo $SUSFS_VER
+
       
       - name: Generate and Create New Tag
         env:
@@ -160,13 +164,23 @@ jobs:
           rm -rf temp temp_extract
           echo "✅ Final files in downloaded-artifacts/:"
           ls -lh downloaded-artifacts/ || echo "No extracted files found."
-     
-      - name: Set release body (With SUSFS)
+
+      - name: Set Release Name (With SUSFS)
+        if: ${{ inputs.enable_susfs }}
+        run: |
+          echo "RELEASE_NAME=GKI Kernels With XKNSU v${KSUVER} & SUSFS v${SUSFS_VER}" >> $GITHUB_ENV
+
+      - name: Set Release Name (Without SUSFS)
+        if: ${{ !inputs.enable_susfs }}
+        run: |
+          echo "RELEASE_NAME=GKI Kernels With XKNSU v${KSUVER}" >> $GITHUB_ENV
+          
+      - name: Set Release Body
         if: ${{ inputs.enable_susfs }}
         run: |
           cat << EOF > release_body.md
       
-          **✨ XENNET KERNELSU**
+          **✨ XENNET KernelSU Official**
           **🌀 XKNSU v${{ env.KSUVER }}**
           **🛡️ SUSFS ඞ v2.0.0**
           **🧬 HymoFS Enabled**
@@ -176,7 +190,7 @@ jobs:
           **🔒 BBG Protection to Prevent Unauthorized Writes to Certain Partitions**
         
           Commit Hashes (at the time of release):
-          -> XENNET KERNELSU: [${{ env.WKSU_REF }}](${{ env.WKSU_URL }})
+          -> XENNET KernelSU Official: [${{ env.WKSU_REF }}](${{ env.WKSU_URL }})
 
           -> Baseband-guard: [${{ env.BBG_REF }}](${{ env.BBG_URL }})
           
@@ -184,12 +198,12 @@ jobs:
             -> gki-android15-6.6: [${{ env.COMMIT_HASH_gki_android15_6_6 }}](${{ env.COMMIT_URL_gki_android15_6_6 }})
           EOF
 
-      - name: Set release body (No SUSFS)
+      - name: Set release body
         if: ${{ !inputs.enable_susfs }}
         run: |
           cat << EOF > release_body.md
       
-          **✨ XENNET KERNELSU**
+          **✨ XENNET KernelSU Official**
           **🌀 XKNSU v${{ env.KSUVER }}**
           **🧬 HymoFS Enabled**
           **🌐 IPSet Support for Advanced Network Filtering**
@@ -198,10 +212,10 @@ jobs:
           **🔒 BBG Protection to Prevent Unauthorized Writes to Certain Partitions**
         
           Commit Hashes (at the time of release):
-          -> XENNET KERNELSU: [${{ env.WKSU_REF }}](${{ env.WKSU_URL }})
+          -> XENNET KernelSU Official: [${{ env.WKSU_REF }}](${{ env.WKSU_URL }})
 
           -> Baseband-guard: [${{ env.BBG_REF }}](${{ env.BBG_URL }})
-          
+
           EOF
 
       - name: Create GitHub Release
