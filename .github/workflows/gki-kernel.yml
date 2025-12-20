@@ -448,20 +448,6 @@ jobs:
             fi
           fi
           echo "✅ SUSFS patches applied"
-            
-      - name: Apply HOOKS patch
-        run: |
-          echo "Change to the configuration directory: $CONFIG..."
-          cd "$CONFIG/common"
-          if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
-            echo "Applying hooks for KernelSU-Next..."
-            cp ../../kernel_patches/next/scope_min_manual_hooks_v1.4.patch ./
-            patch -p1 -F 3 < scope_min_manual_hooks_v1.4.patch
-          elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
-            echo "Applying hooks for SukiSU..."
-            #cp ../../SukiSU_patch/hooks/scope_min_manual_hooks_v1.6.patch ./
-            #patch -p1 -F 3 < scope_min_manual_hooks_v1.6.patch
-          fi
 
       - name: Scan and collect patch rejects
         run: |
