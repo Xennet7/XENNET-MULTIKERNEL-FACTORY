@@ -5,8 +5,8 @@ permissions:
   actions: write
 
 on:
-   workflow_call: # This allows this workflow to be called from another workflow
-    inputs:
+  workflow_call: # This allows this workflow to be called from another workflow
+   inputs:
      kernelsu_variant:
        required: true
        type: string
@@ -23,8 +23,8 @@ on:
         required: true
         type: string     
        
-   workflow_dispatch:
-    inputs:
+  workflow_dispatch:
+   inputs:
      kernelsu_variant:
        required: true
        type: string
@@ -40,19 +40,16 @@ on:
      ksuver:                 
         required: true
         type: string
-
 jobs:
 
   release:
     runs-on: ubuntu-latest
     env:
-      KSU_VER: ${{ inputs.ksuver }}
+      KSUVER: ${{ inputs.ksuver }}
       GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-      RELEASE_NAME: "GKI Kernels With XKNXT & SUSFS v2.0.0"
-      RELEASE_BODY:
-    
+      
     steps:
-    
+          
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -90,9 +87,9 @@ jobs:
             WKSU_REF="$KERNELSU_COMMIT"
           else
             echo "No KernelSU commit provided — fetching latest main branch commit"
-            WKSU_REF=$(git ls-remote "https://github.com/tiann/KernelSU.git" refs/heads/main | awk '{print $1}')
+            WKSU_REF=$(git ls-remote "https://github.com/KernelSU-Next/KernelSU-Next.git" refs/heads/main | awk '{print $1}')
           fi
-          WKSU_URL="https://github.com/tiann/KernelSU/commit/$WKSU_REF"
+          WKSU_URL="https://github.com/KernelSU-Next/KernelSU-Next/commit/$WKSU_REF"
           echo "WKSU_REF=$WKSU_REF" >> $GITHUB_ENV
           echo "WKSU_URL=$WKSU_URL" >> $GITHUB_ENV
           echo "KernelSU Reference: $WKSU_REF"
@@ -103,6 +100,13 @@ jobs:
           BBG_URL="https://github.com/vc-teahouse/Baseband-guard/commit/$BBG_REF"
           echo "BBG_REF=$BBG_REF" >> $GITHUB_ENV
           echo "BBG_URL=$BBG_URL" >> $GITHUB_ENV
+
+          # Calculate the SUSFS version number
+          INFO="https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android15-6.6/ksu_module_susfs/module.prop\?ref_type\=heads"
+          SUSVER=$(curl -s $INFO | awk -F '=' '$1 == "version" { print $2 }')
+          echo "SUSFS_VER=$SUSVER" >> $GITHUB_ENV
+          echo $SUSFS_VER
+
       
       - name: Generate and Create New Tag
         env:
@@ -160,8 +164,18 @@ jobs:
           rm -rf temp temp_extract
           echo "✅ Final files in downloaded-artifacts/:"
           ls -lh downloaded-artifacts/ || echo "No extracted files found."
-     
-      - name: Set release body
+
+      - name: Set Release Name (With SUSFS)
+        if: ${{ inputs.enable_susfs }}
+        run: |
+          echo "RELEASE_NAME=GKI Kernels With XKNXT v${KSUVER} & SUSFS v${SUSFS_VER}" >> $GITHUB_ENV
+
+      - name: Set Release Name (Without SUSFS)
+        if: ${{ !inputs.enable_susfs }}
+        run: |
+          echo "RELEASE_NAME=GKI Kernels With XKNXT v${KSUVER}" >> $GITHUB_ENV
+          
+      - name: Set Release Body
         if: ${{ inputs.enable_susfs }}
         run: |
           cat << EOF > release_body.md
@@ -201,7 +215,7 @@ jobs:
           -> XENNET KernelSU NEXT: [${{ env.WKSU_REF }}](${{ env.WKSU_URL }})
 
           -> Baseband-guard: [${{ env.BBG_REF }}](${{ env.BBG_URL }})
-          
+
           EOF
 
       - name: Create GitHub Release
