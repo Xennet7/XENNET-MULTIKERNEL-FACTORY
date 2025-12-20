@@ -31,6 +31,11 @@ on:
         description: "Optional KernelSU commit SHA"
         required: false
         type: string
+      enable_susfs:
+        description: "Enable SUSFS"
+        required: false
+        type: boolean
+        default: true
       susfs_commit:
         description: "Optional SUSFS commit SHA"
         required: false
@@ -90,6 +95,7 @@ jobs:
       make_release: false
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_branch: ${{ inputs.kernelsu_branch }}
+      enable_susfs: ${{ inputs.enable_susfs }}
       susfs_commit: ${{ inputs.susfs_commit }}
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       version: ${{ inputs.version }}
@@ -109,6 +115,7 @@ jobs:
       kernelsu_variant: ${{ inputs.kernelsu_variant }}
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
+      enable_susfs: ${{ inputs.enable_susfs }}
   releasesuki:
     if: ${{ inputs.kernelsu_variant == 'SukiSU' }}
     uses: ./.github/workflows/releasesuki.yml
@@ -118,6 +125,7 @@ jobs:
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       susfs_commit: ${{ inputs.susfs_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
+      enable_susfs: ${{ inputs.enable_susfs }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -130,6 +138,7 @@ jobs:
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       susfs_commit: ${{ inputs.susfs_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
+      enable_susfs: ${{ inputs.enable_susfs }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -142,6 +151,7 @@ jobs:
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       susfs_commit: ${{ inputs.susfs_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
+      enable_susfs: ${{ inputs.enable_susfs }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -154,6 +164,7 @@ jobs:
       kernelsu_commit: ${{ inputs.kernelsu_commit }}
       susfs_commit: ${{ inputs.susfs_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
+      enable_susfs: ${{ inputs.enable_susfs }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
