@@ -46,7 +46,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      KSU_VERSION: ${{ inputs.ksuver }}
+      KSU_VER: ${{ inputs.ksuver }}
       GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
       RELEASE_NAME: "GKI Kernels With XKNXT & SUSFS v2.0.0"
       RELEASE_BODY:
