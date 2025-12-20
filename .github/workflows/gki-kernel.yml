@@ -34,6 +34,9 @@ on:
       kernelsu_commit:
         required: false
         type: string
+      enable_susfs:
+        required: false
+        type: boolean
       susfs_commit:
         required: false
         type: string
@@ -155,6 +158,7 @@ jobs:
           git clone https://github.com/zzh20188/GKI_KernelSU_SUSFS.git zzh_patch
           
       - name: Fetch and Incorporating SUSFS
+        if: ${{ inputs.enable_susfs }}
         run: |
           SUSFS_BRANCH="gki-${{ inputs.android_version }}-${{ inputs.kernel_version }}"
           SUSFS_COMMIT="${{ inputs.susfs_commit }}"
@@ -175,34 +179,26 @@ jobs:
         run: |
           mkdir -p "$CONFIG"
           cd "$CONFIG"
-          
-          FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"
-          
-          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16
-          
+          FORMATTED_BRANCH="${{ inputs.android_version }}-${{ inputs.kernel_version }}-${{ inputs.os_patch_level }}"         
+          $REPO init --depth=1 --u https://android.googlesource.com/kernel/manifest -b common-${FORMATTED_BRANCH} --repo-rev=v2.16          
           REMOTE_BRANCH=$(git ls-remote https://android.googlesource.com/kernel/common ${FORMATTED_BRANCH})
           DEFAULT_MANIFEST_PATH=.repo/manifests/default.xml
           if grep -q deprecated <<< $REMOTE_BRANCH; then
             sed -i "s/\"${FORMATTED_BRANCH}\"/\"deprecated\/${FORMATTED_BRANCH}\"/g" $DEFAULT_MANIFEST_PATH
-          fi
-          
+          fi        
           $REPO --trace sync -c -j$(nproc --all) --no-tags --fail-fast
 
       - name: Extract Actual Sublevel for LTS Builds
         if: inputs.sub_level == 'X'
         run: |
-          cd "$CONFIG/common"
-          
+          cd "$CONFIG/common"          
           if [ -f "Makefile" ]; then
-            ACTUAL_SUBLEVEL=$(grep '^SUBLEVEL = ' Makefile | awk '{print $3}')
-            
+            ACTUAL_SUBLEVEL=$(grep '^SUBLEVEL = ' Makefile | awk '{print $3}')            
             if [ -n "$ACTUAL_SUBLEVEL" ]; then
               OLD_CONFIG="$CONFIG"
-              NEW_CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-$ACTUAL_SUBLEVEL"
-              
+              NEW_CONFIG="${{ inputs.android_version }}-${{ inputs.kernel_version }}-$ACTUAL_SUBLEVEL"              
               echo "CONFIG=$NEW_CONFIG" >> $GITHUB_ENV
-              echo "ACTUAL_SUBLEVEL=$ACTUAL_SUBLEVEL" >> $GITHUB_ENV
-              
+              echo "ACTUAL_SUBLEVEL=$ACTUAL_SUBLEVEL" >> $GITHUB_ENV              
               cd ../..
               if [ -d "$OLD_CONFIG" ]; then
                 echo "Renaming directory from $OLD_CONFIG to $NEW_CONFIG"
@@ -387,6 +383,7 @@ jobs:
           fi
 
       - name: Installing the SUSFS patch for KernelSU variants
+        if: ${{ inputs.enable_susfs }}
         run: |
           echo "Change to the configuration directory: $CONFIG..."
           cd "$CONFIG"
@@ -660,6 +657,7 @@ jobs:
           fi
           
       - name: Add SUSFS configuration settings
+        if: ${{ inputs.enable_susfs }}
         run: |
           echo "Change to the configuration directory: $CONFIG..."
           cd "$CONFIG"
@@ -694,6 +692,12 @@ jobs:
           echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> ./common/arch/arm64/configs/gki_defconfig
 
+      - name: Add Additional configuration settings
+        run: |
+          echo "Change to the configuration directory: $CONFIG..."
+          cd "$CONFIG"
+          echo "Adding additional configuration settings to gki_defconfig..."
+ 
           # Add additional tmpfs config setting
           echo "CONFIG_TMPFS_XATTR=y" >> ./common/arch/arm64/configs/gki_defconfig
           echo "CONFIG_TMPFS_POSIX_ACL=y" >> ./common/arch/arm64/configs/gki_defconfig
@@ -876,7 +880,31 @@ jobs:
             mv oImage Image
             cd ../../..      
 
-      - name: Define KSU Build Naming
+      - name: Define KSU Build Naming (With SUSFS)
+        if: ${{ inputs.enable_susfs }}
+        run: |
+          if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
+            echo "This is the Next variant"
+            KSU_NAME="XKNXT-SUSFS"
+            echo "XNAME=$KSU_NAME" >> $GITHUB_ENV
+          elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
+            echo "This is the SukiSU variant"
+            KSU_NAME="XSUKI-SUSFS"
+            echo "XNAME=$KSU_NAME" >> $GITHUB_ENV
+          elif [ "${{ inputs.kernelsu_variant }}" == "Official" ]; then
+            echo "This is the Official"
+            KSU_NAME="XKNSU-SUSFS"
+            echo "XNAME=$KSU_NAME" >> $GITHUB_ENV
+          elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
+            echo "This is the Official"
+            KSU_NAME="XMKSU-SUSFS"
+            echo "XNAME=$KSU_NAME" >> $GITHUB_ENV    
+          else
+            echo "Unknown variant"
+          fi
+
+      - name: Define KSU Build Naming (No SUSFS)
+        if: ${{ !inputs.enable_susfs }}
         run: |
           if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
             echo "This is the Next variant"
