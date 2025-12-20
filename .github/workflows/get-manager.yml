@@ -13,10 +13,9 @@ on:
         required: false
         type: string
       ksuver:                 
-        required: true
+        required: false
         type: string
       enable_susfs:
-        description: "Enable SUSFS"
         required: false
         type: boolean
         default: true
