@@ -518,7 +518,6 @@ jobs:
           patch -p1 --forward < "../../../kernel_patches/common/optimized_mem_operations.patch"
           patch -p1 --forward < "../../../kernel_patches/common/file_struct_8bytes_align.patch"
           patch -p1 --forward < "../../../kernel_patches/common/reduce_cache_pressure.patch"
-          patch -p1 --forward < reduce_cache_pressure.patch
           if [ "$(printf '%s\n' "${{ inputs.kernel_version }}" "$MIN_VERSION" | sort -V | head -n1)" = "${{ inputs.kernel_version }}" ]; then
             patch -p1 --forward < "../../../kernel_patches/common/clear_page_16bytes_align.patch"
             echo "Patching unicode!"
