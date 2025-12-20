@@ -87,9 +87,9 @@ jobs:
             WKSU_REF="$KERNELSU_COMMIT"
           else
             echo "No KernelSU commit provided — fetching latest main branch commit"
-            WKSU_REF=$(git ls-remote "https://github.com/tiann/KernelSU.git" refs/heads/main | awk '{print $1}')
+            WKSU_REF=$(git ls-remote "https://github.com/SukiSU-Ultra/SukiSU-Ultra.git" refs/heads/main | awk '{print $1}')
           fi
-          WKSU_URL="https://github.com/tiann/KernelSU/commit/$WKSU_REF"
+          WKSU_URL="https://github.com/SukiSU-Ultra/SukiSU-Ultra/commit/$WKSU_REF"
           echo "WKSU_REF=$WKSU_REF" >> $GITHUB_ENV
           echo "WKSU_URL=$WKSU_URL" >> $GITHUB_ENV
           echo "KernelSU Reference: $WKSU_REF"
