@@ -483,7 +483,7 @@ jobs:
       - name: Upload Build Rejects
         uses: actions/upload-artifact@v4
         with:
-          name: Rejects-${{ env.ksuver }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}
+          name: Rejects-${{ env.ksuver }}-${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ env.ACTUAL_SUBLEVEL || inputs.sub_level }}-${{ inputs.os_patch_level }}-${{ matrix.build_type }}
           path: patch-rejects
           compression-level: 9
 
