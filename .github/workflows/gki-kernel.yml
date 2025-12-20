@@ -509,7 +509,6 @@ jobs:
             echo "CONFIG_HYMOFS=y" >> arch/arm64/configs/gki_defconfig
           echo "HYMOFS (with SUSFS) applied successfully"
 
-
       - name: Apply Performance Patches
         if: false
         run: |
