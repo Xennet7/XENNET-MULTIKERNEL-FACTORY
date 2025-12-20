@@ -47,13 +47,19 @@ jobs:
     env:
       KSU_VER: ${{ inputs.ksuver }}
       GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-      RELEASE_NAME: "GKI Kernels With XSUKI & SUSFS v2.0.0"
-      RELEASE_BODY:
       
     steps:
-    
+          
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set release name
+        run: |
+          RELEASE_NAME="GKI Kernels With XSUKI v${KSU_VER}"
+          if [ "${{ inputs.use_susfs }}" = "true" ]; then
+            RELEASE_NAME="$RELEASE_NAME & SUSFS v2.0.0"
+          fi
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
 
       - name: Get commit hashes and generate commit URLs
         if: ${{ inputs.enable_susfs }}
