@@ -497,6 +497,7 @@ jobs:
           patch -p1 -F 3 < hymofs.patch
           grep -q CONFIG_HYMOFS arch/arm64/configs/gki_defconfig || \
             echo "CONFIG_HYMOFS=y" >> arch/arm64/configs/gki_defconfig
+          sed -i 's/static dev_t get_dev_for_path/static dev_t __attribute__((unused)) get_dev_for_path/' fs/hymofs.c
           echo "HYMOFS (without SUSFS) applied successfully"
 
       - name: Apply HYMOFS patch (with SUSFS)
@@ -509,6 +510,7 @@ jobs:
           patch -p1 -F 3 < hymofs_with_susfs.patch
           grep -q CONFIG_HYMOFS arch/arm64/configs/gki_defconfig || \
             echo "CONFIG_HYMOFS=y" >> arch/arm64/configs/gki_defconfig
+          sed -i 's/static dev_t get_dev_for_path/static dev_t __attribute__((unused)) get_dev_for_path/' fs/hymofs.c
           echo "HYMOFS (with SUSFS) applied successfully"
 
       - name: Apply Performance Patches
