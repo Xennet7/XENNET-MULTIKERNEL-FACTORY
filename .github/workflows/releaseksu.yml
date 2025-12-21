@@ -21,7 +21,10 @@ on:
        type: string
      ksuver:                 
         required: true
-        type: string     
+        type: string
+     kernelsu_branch:
+        required: true
+        type: string
        
   workflow_dispatch:
    inputs:
@@ -40,6 +43,10 @@ on:
      ksuver:                 
         required: true
         type: string
+     kernelsu_branch:
+        required: true
+        type: string
+
 jobs:
 
   release:
@@ -78,6 +85,41 @@ jobs:
             echo "COMMIT_HASH_${var_name}=$COMMIT_HASH" >> "$GITHUB_ENV"
             echo "COMMIT_URL_${var_name}=$COMMIT_URL" >> "$GITHUB_ENV"
           done
+
+      - name: Determine the branch of KernelSU
+        run: |
+          branch_input="${{ inputs.kernelsu_branch }}"
+          variant_input="${{ inputs.kernelsu_variant }}"
+          case "$branch_input" in
+            "Stable")
+              case "$variant_input" in
+                "Next")
+                  echo "BRANCH=-s stable" >> $GITHUB_ENV
+                  ;;
+                "SukiSU")
+                  echo "BRANCH=-s builtin" >> $GITHUB_ENV
+                  ;;
+                *)
+                  echo "BRANCH=-" >> $GITHUB_ENV
+                  ;;
+              esac
+              ;;
+            "Dev")
+              case "$variant_input" in
+                "Official" | "MKSU") echo "BRANCH=-s main" >> $GITHUB_ENV ;;
+                "Next")              echo "BRANCH=-s dev" >> $GITHUB_ENV ;;
+                "SukiSU")           echo "BRANCH=-s builtin" >> $GITHUB_ENV ;;
+                *) 
+                  echo "Error: Undefined variant for development branch '$variant_input'" >&2
+                  exit 1
+                  ;;
+              esac
+              ;;
+            *)
+              echo "Error: No arguments were provided when a custom branch was required" >&2
+              exit 1
+              ;;
+          esac
             
       - name: Get KernelSU variant refs and links
         run: |
@@ -87,7 +129,7 @@ jobs:
             WKSU_REF="$KERNELSU_COMMIT"
           else
             echo "No KernelSU commit provided — fetching latest main branch commit"
-            WKSU_REF=$(git ls-remote "https://github.com/tiann/KernelSU.git" refs/heads/main | awk '{print $1}')
+            WKSU_REF=$(git ls-remote "https://github.com/tiann/KernelSU.git" refs/heads/$BRANCH | awk '{print $1}')
           fi
           WKSU_URL="https://github.com/tiann/KernelSU/commit/$WKSU_REF"
           echo "WKSU_REF=$WKSU_REF" >> $GITHUB_ENV
@@ -105,7 +147,7 @@ jobs:
           INFO="https://gitlab.com/simonpunk/susfs4ksu/-/raw/gki-android15-6.6/ksu_module_susfs/module.prop\?ref_type\=heads"
           SUSVER=$(curl -s $INFO | awk -F '=' '$1 == "version" { print $2 }')
           echo "SUSFS_VER=$SUSVER" >> $GITHUB_ENV
-          echo $SUSFS_VER
+          echo $SUSVER
 
       
       - name: Generate and Create New Tag
@@ -114,14 +156,11 @@ jobs:
         run: |
             LATEST_TAG=$(gh api repos/${{ github.repository }}/tags --jq '.[0].name')
             if [ -z "$LATEST_TAG" ]; then
-              LATEST_TAG="v1.5.12-r0"
-            fi
-            
-            NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')
-    
+              LATEST_TAG="XEN-r0"
+            fi            
+            NEW_TAG=$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')    
             echo "New tag: $NEW_TAG"
             echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
-
             git tag $NEW_TAG
             git push origin $NEW_TAG
             
@@ -168,7 +207,7 @@ jobs:
       - name: Set Release Name (With SUSFS)
         if: ${{ inputs.enable_susfs }}
         run: |
-          echo "RELEASE_NAME=GKI Kernels With XKNSU v${KSUVER} & SUSFS v${SUSFS_VER}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=GKI Kernels With XKNSU v${KSUVER} & SUSFS ${SUSFS_VER}" >> $GITHUB_ENV
 
       - name: Set Release Name (Without SUSFS)
         if: ${{ !inputs.enable_susfs }}
@@ -182,7 +221,7 @@ jobs:
       
           **✨ XENNET KernelSU Official**
           **🌀 XKNSU v${{ env.KSUVER }}**
-          **🛡️ SUSFS ඞ v2.0.0**
+          **🛡️ SUSFS ඞ ${{ env.SUSFS_VER }}**
           **🧬 HymoFS Enabled**
           **🌐 IPSet Support for Advanced Network Filtering**
           **🟢 WireGuard Support**
