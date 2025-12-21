@@ -126,6 +126,7 @@ jobs:
       susfs_commit: ${{ inputs.susfs_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
       enable_susfs: ${{ inputs.enable_susfs }}
+      kernelsu_branch: ${{ inputs.kernelsu_branch }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -139,6 +140,7 @@ jobs:
       susfs_commit: ${{ inputs.susfs_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
       enable_susfs: ${{ inputs.enable_susfs }}
+      kernelsu_branch: ${{ inputs.kernelsu_branch }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -152,6 +154,7 @@ jobs:
       susfs_commit: ${{ inputs.susfs_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
       enable_susfs: ${{ inputs.enable_susfs }}
+      kernelsu_branch: ${{ inputs.kernelsu_branch }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
@@ -165,6 +168,7 @@ jobs:
       susfs_commit: ${{ inputs.susfs_commit }}
       ksuver: ${{ needs.build-kernel-a15-6-6.outputs.ksuver }}
       enable_susfs: ${{ inputs.enable_susfs }}
+      kernelsu_branch: ${{ inputs.kernelsu_branch }}
     needs:
       - build-kernel-a15-6-6
       - get-ksu-manager
