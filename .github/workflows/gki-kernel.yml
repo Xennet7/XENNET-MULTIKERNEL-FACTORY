@@ -410,7 +410,12 @@ jobs:
                 patch -p1 --forward < "../../kernel_patches/next/susfs_fix_patches/v2.0.0/fix_$file.patch"
             done
             patch -p1 --forward < "../../kernel_patches/next/susfs_fix_patches/v2.0.0/overwrite_hook_mode.patch"
-            
+            rm -rf ./kernel/tiny_sulog.c
+            cp "../../kernel_patches/next/susfs_fix_patches/v2.0.0/tiny_sulog.c" ./kernel/tiny_sulog.c
+            patch -p1 --forward < "../../kernel_patches/next/susfs_fix_patches/v2.0.0/ksu_toolkit.patch"
+            # Add Pershoot tracepoint fix for no root
+            curl -Ls https://github.com/pershoot/KernelSU-Next/commit/249d468099c180b7159c240b3f3ecffe8c8d3a6f.patch | patch -p1 || true
+          
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
             echo "Applying SUSFS patches for MKSU..."
             cd ./KernelSU
