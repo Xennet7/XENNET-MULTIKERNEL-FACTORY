@@ -519,7 +519,6 @@ jobs:
           echo "HYMOFS (with SUSFS) applied successfully"
 
       - name: Apply Unicode Patches
-        if: false
         run: |
           cd "$CONFIG/common"
           patch -p1 --forward < "../../kernel_patches/common/unicode_bypass_fix_6.1+.patch"
