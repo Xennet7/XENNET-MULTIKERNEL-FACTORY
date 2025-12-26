@@ -704,6 +704,8 @@ jobs:
 
           # Add KSU configuration settings
           echo "CONFIG_KSU=y" >> ./common/arch/arm64/configs/gki_defconfig
+          echo "CONFIG_TRACEPOINTS=y" >> ./common/arch/arm64/configs/gki_defconfig
+          
 
           if [ "${{ inputs.kernelsu_variant }}" == "Next" ]; then
             echo "CONFIG_KSU_KPROBES_HOOK=n" >> ./common/arch/arm64/configs/gki_defconfig
@@ -850,9 +852,11 @@ jobs:
           cd "$CONFIG"
           echo "Building the kernel..."
           if [ -f "build/build.sh" ]; then
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
+            export KBUILD_BUILD_TIMESTAMP="$(date -u)"
+            LTO=none BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || exit 1
           else
-            tools/bazel build --config=fast --lto=thin //common:kernel_aarch64_dist || exit 1
+            export SOURCE_DATE_EPOCH=$(date +%s)
+            tools/bazel build --config=release --lto=none //common:kernel_aarch64_dist || exit 1
           fi
 
       - name: Extract Kernel Version & Build Time
