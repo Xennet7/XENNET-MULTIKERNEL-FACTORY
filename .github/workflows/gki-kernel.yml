@@ -359,14 +359,7 @@ jobs:
             sed -i '/define get_ksu_version_full/,/endef/d' kernel/Kbuild
             sed -i '/KSU_VERSION_API :=/d' kernel/Kbuild
             sed -i '/KSU_VERSION_FULL :=/d' kernel/Kbuild
-            VERSION_DEFINITIONS=$(cat <<EOF
-              define get_ksu_version_full
-              $VERSION_FULL
-              endef
-              KSU_VERSION_API := $KSU_API_VERSION
-              KSU_VERSION_FULL := $VERSION_FULL
-            EOF
-            )
+            VERSION_DEFINITIONS=$(printf '%s\n' "define get_ksu_version_full" "$VERSION_FULL" "endef" "" "KSU_VERSION_API := $KSU_API_VERSION" "KSU_VERSION_FULL := $VERSION_FULL")
             awk -v def="$VERSION_DEFINITIONS" '
               /REPO_OWNER :=/ {print; print def; inserted=1; next}
               1
