@@ -359,18 +359,7 @@ jobs:
             sed -i '/define get_ksu_version_full/,/endef/d' kernel/Kbuild
             sed -i '/KSU_VERSION_API :=/d' kernel/Kbuild
             sed -i '/KSU_VERSION_FULL :=/d' kernel/Kbuild
-            VERSION_DEFINITIONS=$(printf '%s\n' "define get_ksu_version_full" "$VERSION_FULL" "endef" "" "KSU_VERSION_API := $KSU_API_VERSION" "KSU_VERSION_FULL := $VERSION_FULL")
-            awk -v def="$VERSION_DEFINITIONS" '
-              /REPO_OWNER :=/ {print; print def; inserted=1; next}
-              1
-              END {if (!inserted) print def}
-            ' kernel/Kbuild > kernel/Kbuild.tmp && mv kernel/Kbuild.tmp kernel/Kbuild
-            #KSU_VERSION=$(expr $(git rev-list --count main 2>/dev/null || echo 13000) + 37185)
-            #echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
-            echo "::group::Finally, a preview of the version information and some debugging results in Kbuild."
-            grep -A10 "REPO_OWNER" kernel/Kbuild
-            grep "KSU_VERSION_FULL" kernel/Kbuild
-            echo "::endgroup::"
+            printf '%s\n' "define get_ksu_version_full" "$VERSION_FULL" "endef" "" "KSU_VERSION_API := $KSU_API_VERSION" "KSU_VERSION_FULL := $VERSION_FULL" >> kernel/Kbuild && echo "::group::Kbuild version info" && grep "KSU_VERSION_FULL" kernel/Kbuild || true && echo "::endgroup::"
             cd "$CONFIG"
 
           else
