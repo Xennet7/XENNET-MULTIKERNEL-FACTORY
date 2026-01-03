@@ -360,7 +360,8 @@ jobs:
             sed -i '/KSU_VERSION_API :=/d' kernel/Kbuild
             sed -i '/KSU_VERSION_FULL :=/d' kernel/Kbuild
             printf '%s\n' "define get_ksu_version_full" "$VERSION_FULL" "endef" "" "KSU_VERSION_API := $KSU_API_VERSION" "KSU_VERSION_FULL := $VERSION_FULL" >> kernel/Kbuild && echo "::group::Kbuild version info" && grep "KSU_VERSION_FULL" kernel/Kbuild || true && echo "::endgroup::"
-            cd "$CONFIG"
+            echo "::group::Final KernelSU Version" && echo "KSU_VERSION_FULL=$VERSION_FULL" && echo "::endgroup::"
+            cd ..
 
           else
             echo "Unknown kernelsu_variant: ${{ inputs.kernelsu_variant }}"
