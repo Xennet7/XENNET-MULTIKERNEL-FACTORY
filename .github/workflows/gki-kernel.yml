@@ -324,12 +324,61 @@ jobs:
 
           elif [ "${{ inputs.kernelsu_variant }}" == "SukiSU" ]; then
             echo "Adding KernelSU SukiSU..."
-            if [ -n "$KERNELSU_COMMIT" ]; then
-              echo "Using KernelSU commit: $KERNELSU_COMMIT"
-              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s "$KERNELSU_COMMIT"
+            CUSTOM_TAG="Xennet"
+            MANUAL_HASH="$KERNELSU_COMMIT"
+            # --- Run setup.sh (KEEP EXISTING WORKING BEHAVIOR) ---
+            if [ -n "$MANUAL_HASH" ]; then
+              echo "Using KernelSU commit: $MANUAL_HASH"
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" \
+                | bash -s "$MANUAL_HASH"
             else
-             curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash $BRANCH
+              echo "Using KernelSU branch: $BRANCH"
+              curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" \
+                | bash $BRANCH
             fi
+            cd ./KernelSU
+            # --- Ensure exact commit if provided ---
+            if [ -n "$MANUAL_HASH" ]; then
+              git fetch origin builtin --depth=50
+              git checkout "$MANUAL_HASH"
+              SHORT_HASH="${MANUAL_HASH:0:8}"
+            fi
+            # --- Resolve commit hash ---
+            GIT_HASH=$(git rev-parse --short HEAD)
+            USE_HASH="${SHORT_HASH:-$GIT_HASH}"
+            # --- Read KernelSU API version ---
+            KSU_API_VERSION=$(grep -m1 "KSU_VERSION_API :=" kernel/Kbuild | awk -F'= ' '{print $2}')
+            # Enforce minimum API version
+            if [[ -z "$KSU_API_VERSION" || "$(printf '%s\n' "$KSU_API_VERSION" "3.1.7" | sort -V | head -n1)" != "3.1.7" ]]; then
+              KSU_API_VERSION="3.1.7"
+            fi
+            echo "KSU_API_VERSION=$KSU_API_VERSION" >> "$GITHUB_ENV"
+            # --- Build Xennet version string ---
+            VERSION_FULL="v$KSU_API_VERSION-$CUSTOM_TAG@builtin[$USE_HASH]"
+            # --- Clean old definitions ---
+            sed -i '/define get_ksu_version_full/,/endef/d' kernel/Kbuild
+            sed -i '/KSU_VERSION_API :=/d' kernel/Kbuild
+            sed -i '/KSU_VERSION_FULL :=/d' kernel/Kbuild
+            VERSION_DEFINITIONS=$(cat <<EOF
+              define get_ksu_version_full
+              $VERSION_FULL
+              endef
+              KSU_VERSION_API := $KSU_API_VERSION
+              KSU_VERSION_FULL := $VERSION_FULL
+            EOF
+            )
+            awk -v def="$VERSION_DEFINITIONS" '
+              /REPO_OWNER :=/ {print; print def; inserted=1; next}
+              1
+              END {if (!inserted) print def}
+            ' kernel/Kbuild > kernel/Kbuild.tmp && mv kernel/Kbuild.tmp kernel/Kbuild
+            #KSU_VERSION=$(expr $(git rev-list --count main 2>/dev/null || echo 13000) + 37185)
+            #echo "KSUVER=$KSU_VERSION" >> $GITHUB_ENV
+            echo "::group::Finally, a preview of the version information and some debugging results in Kbuild."
+            grep -A10 "REPO_OWNER" kernel/Kbuild
+            grep "KSU_VERSION_FULL" kernel/Kbuild
+            echo "::endgroup::"
+            cd "$CONFIG"
 
           else
             echo "Unknown kernelsu_variant: ${{ inputs.kernelsu_variant }}"
@@ -372,16 +421,6 @@ jobs:
           echo "Determined KSU numeric version: $KSU_VERSION (commit: $COMMIT_HASH)"
           echo "ksuver=$KSU_VERSION" >> "$GITHUB_OUTPUT"
           echo "ksuver=$KSU_VERSION" >> "$GITHUB_ENV"
-      
-      - name: SUKISU Manager Information
-        if: ${{ inputs.kernelsu_variant == 'SukiSU' }}
-        run: |
-          if [ ! -z "${{ vars.MANAGER_STR }}" ]; then
-            cd "$CONFIG"
-            cd ./KernelSU
-            sed -i 's|\$(shell cd \$(srctree)/\$(src); \$(GIT_BIN) rev-parse --short=8 HEAD)|${{ vars.MANAGER_STR }}|g' ./kernel/Makefile 
-            sed -n '50,60p' ./kernel/Makefile
-          fi
 
       - name: Installing the SUSFS patch for KernelSU variants
         if: ${{ inputs.enable_susfs }}
