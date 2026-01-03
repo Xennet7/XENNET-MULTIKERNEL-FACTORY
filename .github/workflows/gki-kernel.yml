@@ -409,7 +409,9 @@ jobs:
                 echo "Patching file: $file with fix_$file.patch"
                 patch -p1 --forward < "../../kernel_patches/next/susfs_fix_patches/v2.0.0/fix_$file.patch"
             done
+            echo "Patching Hook Mode!"
             patch -p1 --forward < "../../kernel_patches/next/susfs_fix_patches/v2.0.0/overwrite_hook_mode.patch"
+            echo "Patching KSU_TOOLKIT Support for SusFS kernel!"
             patch -p1 --forward < "../../kernel_patches/next/susfs_fix_patches/v2.0.0/ksu_toolkit.patch"
           
           elif [ "${{ inputs.kernelsu_variant }}" == "MKSU" ]; then
